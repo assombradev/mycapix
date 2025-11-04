@@ -68,13 +68,30 @@ src="https://www.facebook.com/tr?id=3959699630937334&ev=PageView&noscript=1"
       'a[href*="javascript:void"]',
       'a[data-fornpay]',
       'a.w-full',
+      'a.smartplayer-button',
+      'a[class*="smartplayer"]',
+      'div[class*="smartplayer"] a',
       'button',
       '[class*="button"]',
-      '[class*="btn"]'
+      '[class*="btn"]',
+      '[class*="cta"]',
+      'a:not([href^="http"]):not([href^="/"]):not([href=""])'
     ];
     
     selectors.forEach(selector => {
-      document.querySelectorAll(selector).forEach(setupButton);
+      try {
+        const buttons = document.querySelectorAll(selector);
+        console.log('UPSELL2: Found', buttons.length, 'elements for selector:', selector);
+        buttons.forEach(btn => {
+          const text = btn.textContent.trim().substring(0, 50);
+          if (text.includes('REGULARIZAR') || text.includes('RECEBER')) {
+            console.log('UPSELL2: Found REGULARIZAR button!', text);
+          }
+          setupButton(btn);
+        });
+      } catch (e) {
+        console.error('Error with selector', selector, e);
+      }
     });
   }
   
