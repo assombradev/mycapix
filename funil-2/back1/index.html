@@ -54,7 +54,19 @@ src="https://www.facebook.com/tr?id=1039380481627093&ev=PageView&noscript=1"
       
       console.log('BACK1: Button clicked! Redirecting to checkout...');
       
-setTimeout(() => {
+if (typeof fbq !== 'undefined') {
+        fbq('track', 'AddToCart', {
+          content_name: 'cashnopix',
+          value: 27.0,
+          currency: 'BRL'
+        });
+        fbq('track', 'InitiateCheckout', {
+          content_name: 'cashnopix',
+          value: 27.0,
+          currency: 'BRL'
+        });
+      }
+      setTimeout(() => {
         window.location.href = checkoutUrl;
       }, 300);
     });
