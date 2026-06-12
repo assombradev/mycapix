@@ -29,13 +29,10 @@ const mimeTypes = {
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(url.parse(req.url).pathname);
 
-  if (pathname === '/') {
-    res.writeHead(302, { 'Location': '/funil-2/upsell1/' });
-    res.end();
-    return;
-  }
+  // Raiz serve a página de oferta (acesso) sem redirecionar
+  const resolvedPathname = pathname === '/' ? '/funil-2/acesso/index.html' : pathname;
 
-  let filePath = path.join(__dirname, pathname);
+  let filePath = path.join(__dirname, resolvedPathname);
 
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
     filePath = path.join(filePath, 'index.html');
@@ -70,6 +67,6 @@ server.listen(PORT, () => {
   console.log(`  Servidor rodando na porta ${PORT}`);
   console.log('====================================');
   console.log(`\n  Acesse: http://localhost:${PORT}`);
-  console.log(`  Funil:  http://localhost:${PORT}/funil-2/upsell1/`);
+  console.log(`  Oferta: http://localhost:${PORT}/funil-2/acesso/`);
   console.log('\n  Pressione Ctrl+C para parar\n');
 });

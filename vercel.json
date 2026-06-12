@@ -1,7 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/", "destination": "/funil-2/upsell1/index.html" }
+    { "source": "/", "destination": "/funil-2/acesso/index.html" }
   ],
   "headers": [
     {
