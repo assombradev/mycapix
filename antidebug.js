@@ -8,13 +8,13 @@
     window.location.replace(_url);
   }
 
-  // Detecta DevTools encaixado (docked) — só funciona em desktop
-  // Threshold 200px evita falso positivo da barra do browser mobile
+  // Só executa em desktop — mobile não tem DevTools
+  var _isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (_isMobile) return;
+
+  // Detecta DevTools encaixado na lateral (muda a largura)
   function _checkDevTools() {
-    if (
-      window.outerWidth - window.innerWidth > 200 ||
-      window.outerHeight - window.innerHeight > 200
-    ) {
+    if (window.outerWidth - window.innerWidth > 200) {
       _redirect();
     }
   }
