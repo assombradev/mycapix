@@ -1,6 +1,9 @@
 {
   "version": 2,
   "rewrites": [
+    { "source": "/laco.webp", "destination": "/funil-2/acesso/laco.webp" },
+    { "source": "/lotties/:path*", "destination": "/funil-2/acesso/lotties/:path*" },
+    { "source": "/img/:path*", "destination": "/funil-2/acesso/img/:path*" },
     { "source": "/", "destination": "/funil-2/acesso/index.html" }
   ],
   "headers": [
