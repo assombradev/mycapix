@@ -1,4 +1,14 @@
 (function () {
+  // ===================================================================
+  // KILL-SWITCH TEMPORARIO — coloque false para REATIVAR a proteção.
+  // Enquanto true, NADA é executado: sem redirect, sem bloqueio de
+  // teclas (F12 etc.) e sem bloqueio de clique direito. Use para testar
+  // as páginas com o DevTools/console abertos.
+  // LEMBRE de voltar para false antes de subir para produção!
+  var _DISABLED = false;
+  if (_DISABLED) return;
+  // ===================================================================
+
   var _url = 'https://www.youtube.com/shorts/leVBxu2QsuI';
   var _fired = false;
 
