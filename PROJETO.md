@@ -37,6 +37,7 @@ ofertacashnopix/
 │   ├── _next/            ← chunks JS/CSS compartilhados do Next.js
 │   │   └── static/
 │   │       ├── chunks/   ← webpack, react, páginas compiladas
+│   │       │   └── app/<page>/page-<hash>.js  ← chunk de CADA página (o webpack carrega daqui)
 │   │       ├── css/      ← CSS global
 │   │       └── fonts/
 │   ├── acesso/           ← FRONT (página de oferta principal)
@@ -167,6 +168,8 @@ Injetado em todas as páginas via tag `<script src="/antidebug.js"></script>`.
 
 **Mobile:** o script encerra imediatamente em dispositivos móveis (sem falso positivo).
 
+**Kill-switch para testes:** no topo do `antidebug.js` há a flag `var _DISABLED`. Coloque `true` para **desligar tudo** (sem redirect, sem bloqueio de teclas/clique direito) e poder testar as páginas com o DevTools aberto. **Volte para `false` antes de subir para produção.**
+
 ---
 
 ## Problemas Resolvidos Nesta Sessão
@@ -182,6 +185,27 @@ Versão inicial usava `debugger` com timing (dispara em celular lento) e checava
 
 ### 4. Servidor local servindo da pasta errada
 O `server.js` estava dentro de `funil-2/` — ao servir na raiz `/`, os assets `/funil-2/_next/...` viravam `funil-2/funil-2/_next/...`. **Solução:** mover servidor para raiz do projeto.
+
+---
+
+## Problemas Resolvidos — Sessão 14/06/2026 (sub-páginas com tela branca)
+
+As sub-páginas do funil (`upsell1/2/3`, `dws1`, `back1/2`, `login`) ficavam travadas numa tela branca escrita "CARREGANDO...". Só o `acesso` tinha sido corrigido antes. Foram **três causas** distintas:
+
+### 1. CSS/JS com caminhos relativos (mesma causa do acesso)
+Cada `index.html` referenciava CSS/JS como `css/x.css` e `js/x.js`. Servida em `/funil-2/<page>` (sem barra final), o navegador resolvia para `/funil-2/css/...` → **404** → o React nunca hidratava. **Solução:** converter para absolutos `/funil-2/<page>/css/...` e `/funil-2/<page>/js/...` em todas as sub-páginas.
+
+> ⚠️ **Importante:** NÃO use `<base href>` para resolver isso — quebra os `clip-path="url(#id)"` dos SVGs (logos). Use sempre caminhos absolutos.
+
+### 2. Page chunks faltando em `_next/static/chunks/app/<page>/`
+O webpack carrega o componente da página **dinamicamente** de `_next/static/chunks/app/<page>/page-<hash>.js` (via RSC/flight). Essa pasta só existia para `acesso` e `upsell1`. Nas demais → `ChunkLoadError: Loading chunk 591 failed` → React #423.
+**Solução:** copiar o page chunk de cada página (`<page>/js/page-<hash>.js`) para `_next/static/chunks/app/<page>/`.
+**Regra geral:** ao adicionar/alterar uma sub-página, o `page-<hash>.js` precisa existir **nas duas** localizações (pasta da página E `_next/.../app/<page>/`), com conteúdo idêntico.
+
+### 3. upsell2 — chunk corrompido (SyntaxError)
+O `upsell2/js/page-95048fca631c14c5.js` tinha o bloco HTML da VSL (Vturb) colado **cru dentro do JS**, sem as aspas/parênteses que o envolviam: `(0,p.S)<vturb-smartplayer id=...>` em vez de `(0,p.S)('<vturb-smartplayer ...>')`. Gerava `SyntaxError: Unexpected identifier 'id'` → o chunk não fazia parse → ChunkLoadError.
+**Solução:** re-envolver o HTML como string argumento do hook (igual ao `acesso`). O hook (módulo `3869`) recebe uma string e extrai `htmlBlock`/`scriptUrl`/`cleanId` por regex.
+**Dica de verificação:** rode `node --check <arquivo>.js` em qualquer chunk editado antes de commitar.
 
 ---
 
@@ -219,3 +243,6 @@ O `server.js` estava dentro de `funil-2/` — ao servir na raiz `/`, os assets `
 | `ed3450a` | Proteção anti-clonagem em todas as páginas |
 | `6963e1c` | Simplificação do antidebug (remove debugger) |
 | `2e6b013` | Fix falso positivo mobile no antidebug |
+| `f7a73b9` | Documentação completa do projeto (PROJETO.md) |
+| `14345d8` | Fix render das sub-páginas: paths absolutos, page chunks no `_next`, chunk corrompido do upsell2 |
+| `f09c0a5` | Atualiza link de checkout do dws1 e sincroniza chunk do player do upsell2 |
