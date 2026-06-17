@@ -80,14 +80,48 @@ upsell3 (compra) →  login    (tela de acesso ao produto)
 
 ## Checkouts Configurados
 
-| Página | UUID do checkout | Plataforma |
+Gateway atual: **brpix** (links `https://app.cashnopixbr.site/c/<hash>`). O gateway antigo
+(**disrupt**) foi descontinuado — ver "Mecanismo de gateway" abaixo.
+
+| Página | Link de checkout (brpix) | Onde fica no código |
 |---|---|---|
-| acesso | via JS interno (R$37) | app.cashnopixbr.site |
-| upsell1 | `f0693a31-1899-44a6-884b-0ade888a4094` | app.cashnopixbr.site |
-| upsell2 | `e2f97f2c-fcae-4173-bdd5-70e387df61d5` | app.cashnopixbr.site |
-| upsell3 | `f9c1c12b-031b-4dd8-bd37-d6c51659005a` (principal) | app.cashnopixbr.site |
-| back2 | `0bd228f3-c1b7-4ca6-828a-0749e222f4ec` | app.cashnopixbr.site |
-| dws1 | `f9e233c8-32d3-4e73-8176-6a6065e86cb8` | app.cashnopixbr.site |
+| acesso | `/c/356d908237858cf1` | hardcoded no chunk da página |
+| back1 | `/c/b44d252fca359cfa` | hardcoded no chunk da página |
+| back2 | `/c/4eb17cb7f7aee527` | hardcoded no chunk da página |
+| upsell1 | `/c/7dbcb6dd50e88f2e` | config `up1P.pay` |
+| dws1 | `/c/41f21fa2a8708379` | config `dws1P.pay` |
+| upsell2 | `/c/7b14b3428db56842` | config `up2P.pay` |
+| upsell3 | ⚠️ **sem link** (ainda no gateway antigo) | config `up3P.pay` (silver/gold/diamond vazios) |
+
+### Mecanismo de gateway (IMPORTANTE)
+
+As páginas upsell1/2/3 e dws1 montam o botão de compra a partir de um **objeto de config**
+bundlado no chunk da página, com uma entrada por página/fluxo:
+
+```js
+{ up1P:{pay,disru}, dws1P:{pay,disru}, up2P:{pay,disru}, up3P:{pay:{silver,gold,diamond}, disru:{...}}, ...Sr }
+```
+
+- A função resolver `t({page,flow})` devolve a entrada certa: `page:"up1"→up1P`, `"dws1"→dws1P`,
+  `"up2"→up2P`, `"up3"→up3P` (sufixo `Sr` = fluxo secundário; `P` = principal).
+- **`pay`** = link de checkout do gateway **novo (brpix)**.
+- **`disru`** = código do gateway **antigo (disrupt)**, hoje descontinuado.
+
+**Regra de seleção do gateway no botão** (componente `V1`, chunk `327`):
+
+```
+disru COM valor  → renderiza <a data-fornpay="<disru>"> → usa o gateway ANTIGO e IGNORA o pay
+disru VAZIO      → renderiza <button> que navega para o link `pay` → usa o brpix
+```
+
+➡️ **Para uma página usar o brpix:** a chave que ela lê precisa ter `pay` preenchido **E** `disru` vazio.
+Se o `disru` tiver qualquer valor, o `pay` é ignorado e o botão tenta o gateway antigo (morto).
+
+> **Regra dos dois locais:** todo chunk de página existe em **duas** cópias que precisam ficar idênticas:
+> `funil-2/<page>/js/page-<hash>.js` **e** `funil-2/_next/static/chunks/app/<page>/page-<hash>.js`.
+> Alterações de checkout devem ser feitas nas **duas**. Confirme também qual `page-<hash>.js` o
+> `index.html` daquela página realmente carrega (há chunks órfãos de versões antigas na pasta).
+> Sempre rode `node --check <arquivo>.js` após editar um chunk.
 
 ---
 
@@ -289,6 +323,34 @@ que foi **preservado**).
 - A duplicata morta `funil-2/funil-2/acesso/index.html` (artefato de build, não servida) teve o pixel
   Utmify antigo removido (sem inserir o novo, pois não é uma página real).
 
+---
+
+## Checkout / gateway brpix e dev local — Sessão 17/06/2026
+
+### 1. Links de checkout (dws1, upsell1, upsell2)
+Alteração de links que não estava surtindo efeito. Causas e correções:
+- **upsell2** fora editado no chunk **errado** (`page-7e1442d84f3b6bce.js`), mas a página carrega
+  `page-95048fca631c14c5.js`. Aplicado o link no chunk ativo correto (`up2P.pay`).
+- **dws1** recebera o link em `up1P/up2P`, mas a página dws1 lê `dws1P` (resolver `t({page:"dws1"})`).
+  Movido para `dws1P.pay`.
+- Tudo replicado nas **duas localizações** (pasta da página + `_next/.../app/<page>/`).
+
+### 2. Migração para o gateway brpix (esvaziar `disru`)
+Descoberto que o botão usa o gateway **antigo (disrupt)** sempre que `disru` tem valor, **ignorando o
+`pay` (brpix)** — ver "Mecanismo de gateway" na seção Checkouts. Como o disrupt foi descontinuado,
+**esvaziei `dws1P.disru` e `up2P.disru`** para esses botões passarem a usar o link `pay`/brpix
+(mesmo padrão do `up1P`, que já funcionava). Validado com `node --check`.
+> ⚠️ **upsell3** continua no gateway antigo (`up3P.disru` preenchido) e **sem link brpix** — checkout
+> dele provavelmente não funciona. Pendente: receber os 3 links (silver/gold/diamond) e migrar.
+
+### 3. Speed code do VTurb
+Adicionado em acesso/upsell1/upsell2 — ver seção "Vídeos VSL".
+
+### 4. server.js — rewrites do dev local
+O `server.js` não replicava os rewrites do `vercel.json`, então `/laco.webp` e `/lotties/*` davam 404
+no `localhost` (página não carregava por completo). Adicionados os rewrites para o dev local espelhar a
+produção.
+
 ## Deploy — Passo a Passo
 
 1. Faça as alterações locais
@@ -326,3 +388,8 @@ que foi **preservado**).
 | `f7a73b9` | Documentação completa do projeto (PROJETO.md) |
 | `14345d8` | Fix render das sub-páginas: paths absolutos, page chunks no `_next`, chunk corrompido do upsell2 |
 | `f09c0a5` | Atualiza link de checkout do dws1 e sincroniza chunk do player do upsell2 |
+| `2ab7232` | Documenta correções de sessão no PROJETO.md |
+| `5b629ef` | Consolida tracking na Utmify (remove Meta/Kwai/Wustats) + speed code do VTurb + rewrites no server.js |
+| `433946c` | Alterações de links de checkout (commit do usuário) |
+| `52c9784` | Corrige checkout dws1/upsell2 (link na chave e no chunk corretos) |
+| `59e6de6` | Migra checkout dws1/upsell2 para o gateway brpix (esvazia `disru`) |
