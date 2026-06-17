@@ -13,7 +13,7 @@ Site de funil de vendas chamado **Cash No Pix** (cashnopixbr.site), hospedado na
 | Frontend | Next.js (export estático) + React + Tailwind |
 | Animações | Lottie (`.lottie` e `.json`) via DotLottie |
 | Vídeos | Vturb / Converteai (VSL player) |
-| Tracking | Meta Pixel, Utmify, Kwai Pixel |
+| Tracking | Utmify Pixel (único rastreador) |
 | Servidor local | Node.js (server.js) — apenas para dev |
 | Hospedagem | Vercel (static site, framework = Other) |
 | Repositório | https://github.com/assombradev/mycapix |
@@ -93,25 +93,71 @@ upsell3 (compra) →  login    (tela de acesso ao produto)
 
 ## Pixels de Rastreamento
 
+A partir de **17/06/2026**, o funil usa **um único** rastreador: o Pixel da Utmify.
+Todos os pixels antigos foram removidos (ver seção "Consolidação do trackeamento" abaixo).
+
 | Plataforma | ID |
 |---|---|
-| Meta Pixel (principal) | `1039380481627093` |
-| Utmify Pixel 1 | `69083169bcebef921e6ed8a1` |
-| Utmify Pixel 2 | `69128d2ba9ec6c562f2ceb38` |
+| Utmify Pixel (único) | `6a32e6e2d07604ad6574982c` |
+
+O script é idêntico em todas as 8 páginas (`acesso`, `upsell1/2/3`, `dws1`, `back1/2`, `login`),
+inserido no fim do `<head>`, logo antes de `</head>`:
+
+```html
+<!-- UTMIFY: rastreamento de UTMs -->
+<script
+  src="https://cdn.utmify.com.br/scripts/utms/latest.js"
+  data-utmify-prevent-xcod-sck
+  data-utmify-prevent-subids
+  async
+  defer
+></script>
+<!-- UTMIFY: pixel -->
+<script>
+  window.pixelId = "6a32e6e2d07604ad6574982c";
+  var a = document.createElement("script");
+  a.setAttribute("async", "");
+  a.setAttribute("defer", "");
+  a.setAttribute("src", "https://cdn.utmify.com.br/scripts/pixel/pixel.js");
+  document.head.appendChild(a);
+</script>
+```
+
+### Pixels removidos (não usar mais)
+| Plataforma | ID antigo |
+|---|---|
+| Meta Pixel (acesso/back/dws/upsell) | `1039380481627093` |
+| Meta Pixel (login) | `3959699630937334` |
+| Utmify Pixel 1 (antigo) | `69083169bcebef921e6ed8a1` |
+| Utmify Pixel 2 (antigo) | `69128d2ba9ec6c562f2ceb38` |
 | Kwai Pixel | `690ab0af41847a838d969a7b` |
+| Wustats (`waust.at`) | `zlx1l003k4` |
 
 ---
 
 ## Vídeos VSL (Vturb / Converteai)
 
-Há duas VSLs na página `acesso`:
+Conta Converteai/VTurb: `78d130da-9008-4e8e-aed9-46a76c1217ce`. São 4 VSLs no funil, mapeadas por página
+(o player é renderizado pelo chunk React de cada página):
 
-| ID do Player | Tempo do botão (segundos) |
-|---|---|
-| `vid-6a2c7a3cc24e5836ece8e8ac` | 769s (~12min) |
-| `vid-6a2c79064eb77420ee4aec07` | 355s (~6min) |
+| VSL | ID do Player | m3u8 | Página | Obs |
+|---|---|---|---|---|
+| VSL 1 | `6a2c7a3cc24e5836ece8e8ac` | `6a2c7a28f04e41ecc574edd6` | acesso | botão 769s (~12min) |
+| VSL 2 | `6a2c79064eb77420ee4aec07` | `6a2c78fe57b5fea2c937cb63` | acesso | botão 355s (~6min) |
+| VSL 3 | `6a2edaffe3ec81421df549cd` | `6a2edae2bcb27b44d3e236ee` | upsell1 | |
+| VSL 4 | `6a2eef74d33ef46eda9d6e48` | `6a2eef5d5b719ab8be0e66df` | upsell2 | |
 
 **Dica dev:** adicione `?nodelay=true` na URL para mostrar os botões imediatamente sem assistir o vídeo. Está programado nativamente no código da página.
+
+### Speed code do VTurb (otimização de carregamento) — 17/06/2026
+Cada página de vídeo recebeu no início do `<head>` (logo após a meta `viewport`) o "speed code" do VTurb:
+script inline `_plt` (marca o timeOrigin cedo) + `<link rel="preload">` do(s) `player.js`, do `smartplayer.js`
+e do(s) `main.m3u8`, mais `<link rel="dns-prefetch">` dos domínios converteai/vturb. O `acesso` traz os dois
+players (VSL 1 e VSL 2) combinados, com `smartplayer.js` e dns-prefetch uma única vez.
+
+> **upsell2 — limpeza:** havia referências órfãs de um player antigo (conta `2e8fc70c-…`, vídeo
+> `68cd7140713fc4a5132560c0`) num `<link rel="preload">` no head e num `<script>` no body. Esse player
+> não existia na página (o chunk renderiza o VSL 4) — ambos foram removidos.
 
 ---
 
@@ -208,6 +254,40 @@ O `upsell2/js/page-95048fca631c14c5.js` tinha o bloco HTML da VSL (Vturb) colado
 **Dica de verificação:** rode `node --check <arquivo>.js` em qualquer chunk editado antes de commitar.
 
 ---
+
+## Consolidação do trackeamento — Sessão 17/06/2026
+
+Os pixels haviam sido configurados de forma inconsistente e "se perderam": cada página disparava
+para **vários** rastreadores ao mesmo tempo (Meta Pixel, duas instâncias da Utmify, Kwai, Wustats)
+e blocos `fbq()` customizados (AddToCart/InitiateCheckout). Risco de enviar eventos para pixels errados.
+
+**Ação:** remover TODO o trackeamento antigo e deixar **apenas** o novo Pixel Utmify
+(`6a32e6e2d07604ad6574982c`) como único rastreador em todas as páginas.
+
+### O que foi removido de cada `index.html`
+- `<link rel="preload" ... utms/latest.js>` + as 2 instâncias antigas do pixel Utmify
+- Bloco Meta Pixel (`<!-- Meta Pixel Code --> … <!-- End Meta Pixel Code -->`) + `<noscript>` do Facebook
+- Bloco Kwai (`window.kwaiPixelId` + `pixel-kwai.js`)
+- Div oculta do Wustats (`_wau` / `//waust.at/s.js`)
+- Script customizado `(function(){…fbq…})()` (variantes `setupCheckoutButtons` e `setupButton`)
+
+### Detalhe importante: HTML "sujo" das sub-páginas
+`back1/2`, `dws1`, `upsell1/3` tinham **lixo anexado depois** do primeiro `</body></html>`
+(custom fbq + Kwai + um segundo `antidebug.js` + segundo `</body></html>`). A limpeza **truncou tudo
+após o primeiro `</body></html>`** — esse lixo NÃO continha o player VSL, então nada de funcional se perdeu.
+O `upsell2` era diferente (tracking dentro do corpo, antes do fechamento único, + player `converteai`
+que foi **preservado**).
+
+### Preservados (não confundir com tracking)
+- `antidebug.js`, chunks Next.js (`self.__next_f`), players VSL (Vturb/Converteai), CSS/fontes/lotties.
+
+### Verificação feita
+- `grep` por `fbq(`, `connect.facebook.net`, `kwaiPixelId`, `pixel-kwai`, `waust.at`, e os IDs antigos
+  → **0 ocorrências** em qualquer `.html`.
+- Novo pixel `6a32e6e2d07604ad6574982c` → exatamente **1×** por página (8 páginas).
+- Tags `<script>`/`</script>` balanceadas; um único `</head>`/`<body>`/`</body></html>` por página.
+- A duplicata morta `funil-2/funil-2/acesso/index.html` (artefato de build, não servida) teve o pixel
+  Utmify antigo removido (sem inserir o novo, pois não é uma página real).
 
 ## Deploy — Passo a Passo
 

@@ -30,7 +30,22 @@ const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(url.parse(req.url).pathname);
 
   // Raiz serve a página de oferta (acesso) sem redirecionar
-  const resolvedPathname = pathname === '/' ? '/funil-2/acesso/index.html' : pathname;
+  let resolvedPathname = pathname === '/' ? '/funil-2/acesso/index.html' : pathname;
+
+  // Replica os rewrites do vercel.json para o dev local (assets carregados
+  // pelo React com caminho relativo à raiz). Sem isso, /laco.webp e /lotties/*
+  // dão 404 localmente e a página não carrega por completo.
+  const rewrites = [
+    [/^\/laco\.webp$/, '/funil-2/acesso/laco.webp'],
+    [/^\/lotties\/(.*)$/, '/funil-2/acesso/lotties/$1'],
+    [/^\/img\/(.*)$/, '/funil-2/acesso/img/$1']
+  ];
+  for (const [re, dest] of rewrites) {
+    if (re.test(resolvedPathname)) {
+      resolvedPathname = resolvedPathname.replace(re, dest);
+      break;
+    }
+  }
 
   let filePath = path.join(__dirname, resolvedPathname);
 
