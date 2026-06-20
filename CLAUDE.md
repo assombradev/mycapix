@@ -26,6 +26,6 @@ a documentação andarem juntos.
 - **Checkout/gateway:** no config das páginas, `pay` = gateway novo (brpix), `disru` = gateway antigo
   (disrupt, descontinuado). O botão usa o gateway antigo se `disru` tiver valor (ignora `pay`). Para usar o
   brpix: `pay` preenchido **e** `disru` vazio. Cada página lê sua própria chave (`up1P/dws1P/up2P/up3P`).
-- **Tracking:** rastreador único é o Pixel Utmify `6a32e6e2d07604ad6574982c`. Não reintroduzir Meta/Kwai/Wustats.
+- **Tracking:** rastreador único é o Pixel Utmify `6a37161ef69cce7d66a18fcb`. Não reintroduzir Meta/Kwai/Wustats.
 - **antidebug.js:** flag `_DISABLED` (true só para testar com DevTools). Garanta `false` antes de subir para produção.
 - **Deploy:** push em `main` (remoto `origin` = `assombradev/mycapix`) → a Vercel redeploya sozinha.

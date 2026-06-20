@@ -132,7 +132,7 @@ Todos os pixels antigos foram removidos (ver seção "Consolidação do trackeam
 
 | Plataforma | ID |
 |---|---|
-| Utmify Pixel (único) | `6a32e6e2d07604ad6574982c` |
+| Utmify Pixel (único) | `6a37161ef69cce7d66a18fcb` |
 
 O script é idêntico em todas as 8 páginas (`acesso`, `upsell1/2/3`, `dws1`, `back1/2`, `login`),
 inserido no fim do `<head>`, logo antes de `</head>`:
@@ -148,7 +148,7 @@ inserido no fim do `<head>`, logo antes de `</head>`:
 ></script>
 <!-- UTMIFY: pixel -->
 <script>
-  window.pixelId = "6a32e6e2d07604ad6574982c";
+  window.pixelId = "6a37161ef69cce7d66a18fcb";
   var a = document.createElement("script");
   a.setAttribute("async", "");
   a.setAttribute("defer", "");
@@ -296,7 +296,7 @@ para **vários** rastreadores ao mesmo tempo (Meta Pixel, duas instâncias da Ut
 e blocos `fbq()` customizados (AddToCart/InitiateCheckout). Risco de enviar eventos para pixels errados.
 
 **Ação:** remover TODO o trackeamento antigo e deixar **apenas** o novo Pixel Utmify
-(`6a32e6e2d07604ad6574982c`) como único rastreador em todas as páginas.
+(`6a37161ef69cce7d66a18fcb`) como único rastreador em todas as páginas.
 
 ### O que foi removido de cada `index.html`
 - `<link rel="preload" ... utms/latest.js>` + as 2 instâncias antigas do pixel Utmify
@@ -318,7 +318,7 @@ que foi **preservado**).
 ### Verificação feita
 - `grep` por `fbq(`, `connect.facebook.net`, `kwaiPixelId`, `pixel-kwai`, `waust.at`, e os IDs antigos
   → **0 ocorrências** em qualquer `.html`.
-- Novo pixel `6a32e6e2d07604ad6574982c` → exatamente **1×** por página (8 páginas).
+- Novo pixel `6a37161ef69cce7d66a18fcb` → exatamente **1×** por página (8 páginas).
 - Tags `<script>`/`</script>` balanceadas; um único `</head>`/`<body>`/`</body></html>` por página.
 - A duplicata morta `funil-2/funil-2/acesso/index.html` (artefato de build, não servida) teve o pixel
   Utmify antigo removido (sem inserir o novo, pois não é uma página real).
