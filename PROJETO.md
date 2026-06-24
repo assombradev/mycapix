@@ -351,6 +351,37 @@ O `server.js` não replicava os rewrites do `vercel.json`, então `/laco.webp` e
 no `localhost` (página não carregava por completo). Adicionados os rewrites para o dev local espelhar a
 produção.
 
+## Projeto do Checkout próprio (BRPix API + Utmify) — Sessão 24/06/2026
+
+Início do projeto para **substituir os links `/c/...` do gateway brpix por um checkout próprio**,
+resolvendo o problema de **vendas "não trackeadas" na Utmify** (o gateway recebe as UTMs na URL mas
+não as grava na transação nem as envia à Utmify). Toda a documentação vive em **`docs/checkout/`**.
+
+**Diagnóstico (confirmado):** o funil **repassa as UTMs corretamente** ao checkout (botão `V1`,
+chunk 327, copia `location.search` para a URL do gateway). O furo está no **gateway**. Solução: nosso
+backend vira "dono do pedido" e fala direto com a Utmify (correlação via `external_reference`).
+
+**Documentos criados:**
+- `docs/BRAND.md` — guia de marca (cores `#58B947`/etc., Work Sans, botão `KM`, animações, lógica do funil).
+- `docs/checkout/02-logica.md` — lógica: fluxo criar-PIX → QR → polling → webhook → Utmify; storage
+  MongoDB; modos front/upsell; dados reais (nome/telefone/chave PIX) × genéricos (email/CPF p/ Utmify).
+- `docs/checkout/03-ux.md` — UX: jornada (card único que troca de estado), estados, motion, produtos.
+- `docs/checkout/referencias/api-pix/brpix-api.md` — referência da API BRPix.
+
+**Infra validada (24/06/2026):** chaves BRPix (auth HMAC OK), MongoDB Atlas (conexão OK, db `cashnopix`),
+webhook de produção cadastrado, token Utmify recebido. BRPix liberou **todos os IPs** → arquitetura
+fica **tudo na Vercel + MongoDB**. Segredos em `.env.local` (gitignored); nomes em `.env.example`.
+
+**Definições do produto:** preços por etapa (front R$37, back1 R$27, back2 R$19,90, upsell1 R$67,
+dws1 R$47, upsell2 R$48,93, upsell3 Silver/Gold/Diamond 67/97/57). Saldos exibidos (front R$467,38,
+upsell1/2 R$1.466,74). Nomes: front "Ativação de cadastro", upsell1 "Taxa anti-fraude", upsell2 "Taxa IOF".
+Chip "verificada pelo Banco Central"; rodapé "CASH NO PIX LTDA — CNPJ 34.451.628/0001-25".
+
+**Status:** Fases 1 (brand), 2 (lógica) e 3 (UX) concluídas. Próximo: Fase 4 (UI) e Fase 5 (integração).
+
+> ⚠️ Mudança local não comitada: remoção do delay dos botões do `acesso` (teste de UTMs) permanece
+> só na working tree, fora deste commit de documentação.
+
 ## Deploy — Passo a Passo
 
 1. Faça as alterações locais

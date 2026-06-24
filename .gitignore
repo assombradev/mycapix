@@ -1,6 +1,11 @@
 # Node
 node_modules/
 
+# Env / segredos (NUNCA versionar) — exceto o template .env.example
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]
