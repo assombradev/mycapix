@@ -38,10 +38,11 @@ module.exports = async function (req, res) {
     var email = orders.genEmail(ref);
     var utms = orders.pickUtms(body.utms);
 
-    // 1) Cria a cobrança na BRPix (resposta normalizada no lib)
+    // 1) Cria a cobrança na BRPix (resposta normalizada no lib).
+    //    description = code camuflado (offerNNN), não o nome real.
     var charge = await brpix.createCashIn({
       amount: cfg.amount,
-      description: cfg.description,
+      description: cfg.code,
       external_reference: ref,
       expires_in: "3600"
     });
@@ -55,7 +56,8 @@ module.exports = async function (req, res) {
     var now = new Date();
     var orderDoc = {
       _id: ref, externalReference: ref, txid: txid,
-      funnelStep: resolved.key, amount: cfg.amount, productName: cfg.productName,
+      funnelStep: resolved.key, amount: cfg.amount,
+      productName: cfg.productName, productCode: cfg.code,
       status: "pending",
       customer: { name: customer.name, phone: customer.phone, pixKey: customer.pixKey, email: email, document: cpf },
       utms: utms,
@@ -69,9 +71,10 @@ module.exports = async function (req, res) {
 
     // 3) Utmify — pedido pendente (não bloqueia a resposta ao cliente)
     utmify.sendOrder({
-      orderId: ref, productId: resolved.key, productName: cfg.productName, amount: cfg.amount,
+      orderId: ref, productId: resolved.key, productName: cfg.code, amount: cfg.amount,
       customer: { name: customer.name, email: email, phone: customer.phone, document: cpf },
-      utms: utms, status: "waiting_payment", createdAt: now, approvedDate: null
+      utms: utms, status: "waiting_payment", createdAt: now, approvedDate: null,
+      isTest: process.env.UTMIFY_TEST === "true"
     }).then(function (r) {
       if (r.ok) mongoMark(ref, "utmifySent.pending", true);
     }).catch(function (e) { console.error("[criar-pix] utmify", e.message); });

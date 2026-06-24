@@ -5,6 +5,44 @@ const url = require('url');
 
 const PORT = 3000;
 
+// --- Dev: carrega .env.local em process.env (para as Functions locais) ---
+(function loadEnv() {
+  try {
+    const envPath = path.join(__dirname, '.env.local');
+    if (!fs.existsSync(envPath)) return;
+    fs.readFileSync(envPath, 'utf8').split(/\r?\n/).forEach(function (l) {
+      if (!l || l.trimStart().startsWith('#') || !l.includes('=')) return;
+      const i = l.indexOf('=');
+      const k = l.slice(0, i).trim();
+      if (!(k in process.env)) process.env[k] = l.slice(i + 1).trim();
+    });
+    console.log('[dev] .env.local carregado');
+  } catch (e) { /* ignore */ }
+})();
+
+// --- Dev: roteia /api/* para as mesmas Vercel Functions (reusa lib/) ---
+const API_ROUTES = {
+  '/api/checkout/criar-pix': './api/checkout/criar-pix.js',
+  '/api/checkout/status': './api/checkout/status.js',
+  '/api/webhooks/brpix': './api/webhooks/brpix.js'
+};
+function shimRes(res) {
+  if (!res.status) res.status = function (c) { res.statusCode = c; return res; };
+  if (!res.json) res.json = function (o) { if (!res.headersSent) res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)); };
+  return res;
+}
+function serveApi(pathname, req, res) {
+  const file = API_ROUTES[pathname.replace(/\/$/, '')];
+  if (!file) { res.writeHead(404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'not_found' })); return; }
+  let handler;
+  try { handler = require(file); } catch (e) { res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'load_failed', detail: e.message })); return; }
+  shimRes(res);
+  Promise.resolve(handler(req, res)).catch(function (err) {
+    console.error('[api]', err);
+    if (!res.headersSent) { res.statusCode = 500; res.end(JSON.stringify({ error: 'internal' })); }
+  });
+}
+
 const mimeTypes = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -28,6 +66,9 @@ const mimeTypes = {
 
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(url.parse(req.url).pathname);
+
+  // Dev: Functions locais em /api/*
+  if (pathname.startsWith('/api/')) { return serveApi(pathname, req, res); }
 
   // Raiz serve a página de oferta (acesso) sem redirecionar
   let resolvedPathname = pathname === '/' ? '/funil-2/acesso/index.html' : pathname;

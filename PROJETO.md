@@ -391,14 +391,18 @@ saldo, chip "Banco Central", contador, copia-e-cola, rodapé CNPJ. Lê `?step=` 
 `docs/checkout/05-integracao.md`). Endpoints `/api/checkout/criar-pix`, `/api/checkout/status`,
 `/api/webhooks/brpix`; libs em `lib/` (prices, brpix, utmify, mongo, orders, markPaid). Frontend
 ligado ao backend real (polling + `?next=` para avançar no funil; `?mock=1` p/ preview de UI).
-**Testado de verdade:** Utmify (orders pending/paid com UTMs ✅), MongoDB ✅, `markPaid` idempotente ✅,
-`genCpf` mod-11 ✅, BRPix auth ✅.
-**⚠️ Blocker externo:** `POST /pix/cash-in` da BRPix retorna **500 `BRPIX_ERROR`** (lado deles) — abrir
-chamado pedindo habilitação de **cash-in/recebimento** (protocolos no doc). Sem isso não gera o PIX.
-**Pendente (após cash-in OK):** wire dos botões do funil (V1 + links acesso/back) para `/checkout/`,
-env vars na Vercel, `0.0.0.0/0` no Atlas.
+**Testado de verdade (24/06/2026):** fluxo completo de criação (BRPix cash-in **HTTP 202** com QR real
++ Mongo + Utmify `waiting_payment` com UTMs) ✅, status/polling ✅, `markPaid` idempotente + Utmify
+`paid` ✅, `genCpf` mod-11 ✅. A BRPix habilitou o **cash-in** (era 500; resolvido). Resposta real da
+BRPix é **flat** (`qr_code_text`/`qr_code_image` no topo) — `lib/brpix.js` normaliza.
+**Camuflagem de produto:** nome real só na UI; BRPix `description` e Utmify `productName` recebem um
+`code` (`offer001`..`007`, em `lib/prices.js`). Validado: cobrança grava `"offer001"`.
+**Dev local:** `server.js` carrega `.env.local` e roteia `/api/*` para as Functions (testa o fluxo
+todo no `npm run dev`); `UTMIFY_TEST=true` marca pedidos como teste na Utmify (só local).
+**Falta testar:** webhook `charge.paid` real (precisa de pagamento; o polling cobre como fallback).
+**Pendente:** env vars na Vercel + `0.0.0.0/0` no Atlas; depois, wire dos botões do funil → `/checkout/`.
 
-**Status:** Fases 1–4 concluídas; Fase 5 com backend pronto e testado (exceto cash-in, bloqueado na BRPix).
+**Status:** Fases 1–4 concluídas; Fase 5 funcional e testada (exceto webhook real, coberto por polling).
 
 > ⚠️ Mudança local não comitada: remoção do delay dos botões do `acesso` (teste de UTMs) permanece
 > só na working tree, fora deste commit de documentação.
@@ -447,3 +451,5 @@ env vars na Vercel, `0.0.0.0/0` no Atlas.
 | `59e6de6` | Migra checkout dws1/upsell2 para o gateway brpix (esvazia `disru`) |
 | `8fcb16f` | Documenta projeto do checkout próprio (brand, lógica, UX) + skills UI/UX e `.env.example` |
 | `39a24f6` | Fase 4: UI do checkout próprio (HTML+CSS+JS sem build, em `/checkout/`) |
+| `854dc48` | Fase 5: backend do checkout (Vercel Functions BRPix + MongoDB + Utmify) |
+| `46cef7f` | Fase 5: corrige leitura da resposta real da BRPix (cash-in 202, campos flat) |

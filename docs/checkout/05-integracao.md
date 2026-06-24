@@ -34,6 +34,26 @@ BRPix ─────webhook─────► /api/webhooks/brpix ──► ver
 `checkout/js/checkout.js`: `createPix()` chama o backend real; polling em `/status` a cada 4s;
 `?mock=1` mantém preview de UI sem backend; após pago, redireciona para `?next=` (preservando UTMs).
 
+## Camuflagem do nome do produto (24/06/2026)
+O nome real do produto **não** vai para a intermediadora nem para a Utmify. Cada etapa tem um
+`code` (`offerNNN`) em `lib/prices.js`:
+| Etapa | code |
+|---|---|
+| front/back1/back2 | `offer001` |
+| upsell1 | `offer002` |
+| dws1 | `offer003` |
+| upsell2 | `offer004` |
+| upsell3 silver/gold/diamond | `offer005`/`006`/`007` |
+- BRPix `description` = `code` (validado: a cobrança grava `"offer001"`).
+- Utmify `productName` = `code` (criação e pagamento).
+- A **UI do checkout** segue mostrando os nomes reais (frontend, `checkout/js/checkout.js`).
+- O Mongo guarda os dois (`productName` real + `productCode`).
+
+## Dev local com as Functions (`npm run dev`)
+`server.js` agora carrega `.env.local` e roteia `/api/*` para as mesmas Functions (reusa `lib/`),
+permitindo testar o fluxo completo localmente. `UTMIFY_TEST=true` no `.env.local` marca os pedidos
+como teste na Utmify (não setar em produção).
+
 ## Variáveis de ambiente (Vercel → Project Settings → Environment Variables)
 Replicar **todas** do `.env.local` (nomes em `.env.example`):
 `BRPIX_BASE_URL`, `BRPIX_PUBLIC_KEY`, `BRPIX_SECRET_KEY`, `BRPIX_WEBHOOK_SECRET`,
