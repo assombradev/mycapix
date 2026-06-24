@@ -48,18 +48,22 @@ Replicar **todas** do `.env.local` (nomes em `.env.example`):
 | `markPaid` idempotente + Utmify(paid) | ✅ validado |
 | `genCpf` mod-11 (1000×) | ✅ válido |
 | BRPix auth HMAC | ✅ validado (404 esperado) |
-| **BRPix cash-in (criar cobrança)** | ❌ **HTTP 500 `BRPIX_ERROR`** no lado da BRPix |
+| **BRPix cash-in (criar cobrança)** | ✅ **validado** (HTTP 202, QR real) — habilitado pela BRPix em 24/06 |
+| **Fluxo completo de criação** (cash-in + Mongo + Utmify pending) | ✅ validado ponta a ponta |
 
-### ⚠️ Blocker externo: BRPix cash-in 500
-O `POST /pix/cash-in` retorna 500 (`"Erro ao processar cobrança Pix na BRPix"`) para qualquer payload
-— erro de servidor da BRPix, não do nosso código. **Abrir chamado** no suporte BRPix (protocolos:
-`BRP-20260624-221849-AEWB`, `-221939-NIX6`, `-221941-FCHB`, `-221943-KDEI`) perguntando se a conta
-está **habilitada para cash-in (recebimento)**. Sem isso, não dá para gerar o PIX.
+> A resposta da BRPix é **flat e HTTP 202** (≠ doc, que mostrava `pix:{}`). `lib/brpix.js` normaliza.
+> Ver `referencias/api-pix/brpix-api.md`.
 
-## Passos restantes (após BRPix liberar o cash-in)
-1. Testar `criar-pix` real (gera QR) + receber o webhook `charge.paid` (validar assinatura).
-2. **Wire do funil:** trocar o destino dos botões de compra (componente `V1` + links hardcoded de
+### Ainda não testado (precisa de pagamento real)
+- **Webhook `charge.paid`**: só dispara quando alguém paga um PIX. A verificação de assinatura é HMAC
+  padrão; além disso, o **polling de status** (`/api/checkout/status` → `getCharge`) confirma o
+  pagamento como **fallback** mesmo se o webhook falhar. Validar pagando um PIX de R$1 após o deploy.
+
+## Passos restantes
+1. **Deploy:** push + configurar **env vars na Vercel** (mesmas do `.env.local`) + `0.0.0.0/0` no Atlas.
+2. **Testar em produção:** abrir `/checkout/?step=front`, gerar PIX; pagar R$1 → confirmar webhook +
+   Utmify(paid). (O polling cobre se o webhook falhar.)
+3. **Wire do funil:** trocar o destino dos botões de compra (componente `V1` + links hardcoded de
    acesso/back) de `https://app.cashnopixbr.site/c/...` para `/checkout/?step=<etapa>&next=<próxima>`.
-   **Só fazer depois** que o cash-in funcionar (senão quebra a compra em produção).
-3. Configurar as env vars na Vercel + `0.0.0.0/0` no Atlas.
+   Fazer por último, após o checkout estar validado em produção.
 4. `DEV/mock` desligado em produção (já é o padrão; `?mock=1` é opt-in).

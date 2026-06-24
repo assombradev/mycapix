@@ -70,24 +70,31 @@ integração é sempre `/pix/cash-in`.)*
 > O pagador é quem escaneia o QR; os dados dele chegam só no webhook `charge.paid`
 > (`payer_name`, `payer_doc`...). Implicação importante em "Análise" abaixo.
 
-**Resposta 200:**
+**Resposta documentada (NÃO bate com a real):** a doc mostra um objeto aninhado `pix:{qr_code,...}`.
+
+**⚠️ Resposta REAL (validada 24/06/2026) — HTTP `202` e campos FLAT (sem `pix`):**
 ```json
 {
-  "id": "92095db2-...",
-  "txid": "92095db2-...",
+  "accepted": true,
+  "txid": "712222f0-...",
+  "id": "b9edf33b-...",
   "status": "PENDING",
-  "amount": 1500,
-  "description": "Order #1234",
-  "external_id": "order_1234",
-  "pix": {
-    "qr_code": "00020126580014br.gov.bcb.pix0136...",   // copia-e-cola
-    "qr_code_image": "data:image/png;base64,iVBOR...",   // imagem do QR
-    "expires_at": "2026-03-25T16:00:00-03:00"
-  },
-  "created_at": "2026-03-25T15:00:00-03:00",
-  "expires_at": "2026-03-25T16:00:00-03:00"
+  "amount": 100,
+  "external_reference": "cnp_test_...",
+  "qr_code_text": "00020101021226710014br.gov.bcb.pix...",   // copia-e-cola
+  "pix_copia_e_cola": "00020101...",                          // idem
+  "qr_code_image": "data:image/png;base64,iVBOR...",          // PNG (~1.4k chars)
+  "expires_at": "2026-06-24T20:45:26-03:00",
+  "poll_url": "/pix/charge/712222f0-...",
+  "message": "Charge accepted for asynchronous processing. Poll GET /pix/charge/{txid}..."
 }
 ```
+- Status HTTP é **202** (não 200). `res.ok` cobre (200–299).
+- Copia-e-cola = `qr_code_text` (ou `pix_copia_e_cola`). Imagem = `qr_code_image` (já vem completa).
+- `lib/brpix.js` normaliza isso para `{ txid, qr_code, qr_code_image, expires_at }`.
+
+**GET `/pix/charge/{txid}` (200)** também é FLAT: `status` no topo (`PENDING`/`PAID`/`EXPIRED`),
+`qr_code_text`, `qr_code_image`, `pix_copia_e_cola`, `expires_at`, `paid_at`, `end_to_end_id`.
 
 ---
 

@@ -38,19 +38,18 @@ module.exports = async function (req, res) {
     var email = orders.genEmail(ref);
     var utms = orders.pickUtms(body.utms);
 
-    // 1) Cria a cobrança na BRPix
+    // 1) Cria a cobrança na BRPix (resposta normalizada no lib)
     var charge = await brpix.createCashIn({
       amount: cfg.amount,
       description: cfg.description,
       external_reference: ref,
       expires_in: "3600"
     });
-    if (!charge.ok || !charge.data || !charge.data.pix) {
-      res.status(502).json({ error: "brpix_failed", detail: charge.data && (charge.data.error || charge.data.error_code) });
+    if (!charge.ok || (!charge.qr_code && !charge.qr_code_image)) {
+      res.status(502).json({ error: "brpix_failed", detail: charge.error });
       return;
     }
-    var d = charge.data;
-    var txid = d.txid || d.id;
+    var txid = charge.txid;
 
     // 2) Persiste o pedido (correlação do webhook)
     var now = new Date();
@@ -80,9 +79,9 @@ module.exports = async function (req, res) {
     // 4) Responde ao browser
     res.status(200).json({
       ref: ref, txid: txid,
-      qr_code: d.pix.qr_code,
-      qr_code_image: d.pix.qr_code_image,
-      expires_at: d.pix.expires_at || d.expires_at || null
+      qr_code: charge.qr_code,
+      qr_code_image: charge.qr_code_image,
+      expires_at: charge.expires_at
     });
   } catch (err) {
     console.error("[criar-pix] erro", err);
