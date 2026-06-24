@@ -19,16 +19,17 @@
     "upsell3:diamond": { mode:"upsell", name:"Plano Diamond", desc:"", amount:5700, balance:146674, img:"upsell3-diamond.webp" }
   };
 
-  var EXPIRES_SEC = 15 * 60; // 15 min
-  var DEV = true;            // Fase 4: mostra botão "simular pagamento" e usa stub
+  var EXPIRES_SEC = 60 * 60; // fallback 60 min (o real vem do expires_at da BRPix)
 
   /* ---------- Helpers ---------- */
   var $ = function (s, r) { return (r || document).querySelector(s); };
   function brl(cents){ return "R$ " + (cents/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
   var params = new URLSearchParams(location.search);
-  var stepKey = params.get("step") || "front";
-  if (params.get("tier")) stepKey = "upsell3:" + params.get("tier");
+  var MOCK = params.get("mock") === "1";   // preview de UI sem backend (?mock=1)
+  var rawStep = params.get("step") || "front";
+  var rawTier = params.get("tier") || null;
+  var stepKey = rawTier ? rawStep + ":" + rawTier : rawStep;
   var CFG = STEPS[stepKey] || STEPS.front;
 
   // Captura UTMs para reuso (Fase 5: enviar ao backend/Utmify)
@@ -108,11 +109,11 @@
   }
 
   /* ---------- State machine ---------- */
-  var timer=null, expiresAt=0;
-  function setState(s){ card.dataset.state=s; }
+  var timer=null, pollTimer=null, expiresAt=0, currentRef=null;
+  function setState(s){ card.dataset.state=s; if(s!=="awaiting") stopPolling(); }
 
-  function startCountdown(){
-    expiresAt = Date.now() + EXPIRES_SEC*1000;
+  function startCountdown(expMs){
+    expiresAt = expMs || (Date.now() + EXPIRES_SEC*1000);
     tick();
     timer = setInterval(tick, 1000);
   }
@@ -125,22 +126,46 @@
   }
   function stopCountdown(){ if(timer){ clearInterval(timer); timer=null; } }
 
-  /* ---------- Backend STUB (trocar na Fase 5) ---------- */
+  /* ---------- Polling de status (real) ---------- */
+  function startPolling(ref){
+    stopPolling();
+    pollTimer = setInterval(function(){
+      fetch("/api/checkout/status?ref="+encodeURIComponent(ref))
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.status==="paid"){ onPaid(); }
+          else if(d.status==="expired"){ stopPolling(); setState("expired"); }
+        }).catch(function(){});
+    }, 4000);
+  }
+  function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+
+  /* ---------- Backend ---------- */
   function createPix(payload){
-    // Fase 5: return fetch("/api/checkout/criar-pix",{method:"POST",body:JSON.stringify(payload)}).then(r=>r.json())
-    var code = "00020126_MOCK_"+stepKey+"_"+Date.now()+"5204000053039865802BR6009SAO PAULO62070503***6304ABCD";
-    return Promise.resolve({ txid:"mock-"+Date.now(), qr_code:code, qr_code_image:makeFakeQr(code) });
+    if(MOCK){
+      var code = "00020126_MOCK_"+stepKey+"_"+Date.now()+"5204000053039865802BR6009SAO PAULO62070503***6304ABCD";
+      return Promise.resolve({ ref:"mock-"+Date.now(), txid:"mock", qr_code:code, qr_code_image:makeFakeQr(code), expires_at:null });
+    }
+    return fetch("/api/checkout/criar-pix",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ step:rawStep, tier:rawTier, customer:payload, utms:utms })
+    }).then(function(r){
+      if(!r.ok) return r.json().then(function(e){ throw new Error((e&&e.error)||"erro"); });
+      return r.json();
+    });
   }
 
   function goPay(payload){
     setState("generating");
     if(payload) try{ localStorage.setItem("cnp_customer", JSON.stringify(payload)); savedCustomer=payload; }catch(e){}
     createPix(payload).then(function(res){
+      currentRef = res.ref;
       els.qrImg.src = res.qr_code_image;
       els.pixCode.value = res.qr_code;
-      if(DEV) els.devPay.hidden=false;
       setState("awaiting");
-      startCountdown();
+      var expMs = res.expires_at ? Date.parse(res.expires_at) : 0;
+      startCountdown(expMs && !isNaN(expMs) ? expMs : 0);
+      if(MOCK) els.devPay.hidden=false; else startPolling(currentRef);
     }).catch(function(){
       setState("input");
       alert("Não foi possível gerar o PIX. Tente de novo.");
@@ -171,12 +196,22 @@
 
   els.devPay.addEventListener("click", onPaid); // Fase 5: vem do polling/webhook
 
+  var paidDone=false;
   function onPaid(){
-    stopCountdown();
+    if(paidDone) return; paidDone=true;
+    stopPolling(); stopCountdown();
     setState("paid");
     try{ var a=new Audio("/funil-2/sound/success.mp3"); a.play().catch(function(){}); }catch(e){}
-    // Fase 5: avançar no funil para a próxima etapa (upsell/login)
-    setTimeout(function(){ console.log("[checkout] pago — avançar no funil (Fase 5)"); }, 1200);
+    // Avança no funil: o botão do funil informa a próxima página via ?next=
+    setTimeout(function(){
+      var next = params.get("next");
+      if(next && /^\/[^/]/.test(next)){
+        // preserva as UTMs ao seguir para a próxima etapa
+        var q = new URLSearchParams();
+        Object.keys(utms).forEach(function(k){ q.set(k, utms[k]); });
+        location.href = next + (q.toString() ? (next.indexOf("?")>-1?"&":"?") + q.toString() : "");
+      }
+    }, 1400);
   }
 
   /* ---------- Fake QR (apenas Fase 4; Fase 5 usa o qr_code_image da BRPix) ---------- */

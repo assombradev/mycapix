@@ -1,0 +1,96 @@
+"use strict";
+/* POST /api/checkout/criar-pix
+   body: { step, tier?, customer:{name,phone,pixKey}, utms:{...} }
+   -> cria cobrança BRPix + salva pedido (Mongo) + Utmify(waiting_payment) -> { ref, txid, qr_code, qr_code_image, expires_at } */
+
+var prices = require("../../lib/prices");
+var brpix = require("../../lib/brpix");
+var utmify = require("../../lib/utmify");
+var orders = require("../../lib/orders");
+var mongo = require("../../lib/mongo");
+
+function readBody(req) {
+  if (req.body && typeof req.body === "object") return Promise.resolve(req.body);
+  if (typeof req.body === "string") { try { return Promise.resolve(JSON.parse(req.body)); } catch (e) { return Promise.resolve({}); } }
+  return new Promise(function (resolve) {
+    var d = ""; req.on("data", function (c) { d += c; });
+    req.on("end", function () { try { resolve(JSON.parse(d || "{}")); } catch (e) { resolve({}); } });
+    req.on("error", function () { resolve({}); });
+  });
+}
+
+module.exports = async function (req, res) {
+  if (req.method !== "POST") { res.status(405).json({ error: "method_not_allowed" }); return; }
+  try {
+    var body = await readBody(req);
+    var resolved = prices.resolveStep(body.step, body.tier);
+    if (!resolved) { res.status(400).json({ error: "invalid_step" }); return; }
+
+    var cfg = resolved.cfg;
+    var customer = orders.sanitizeCustomer(body.customer);
+    // front exige dados; upsell deveria reusar os salvos, mas validamos o mínimo sempre.
+    if (!customer.name || customer.phone.length < 10 || !customer.pixKey) {
+      res.status(400).json({ error: "invalid_customer" }); return;
+    }
+
+    var ref = orders.genExternalRef(resolved.key);
+    var cpf = orders.genCpf();
+    var email = orders.genEmail(ref);
+    var utms = orders.pickUtms(body.utms);
+
+    // 1) Cria a cobrança na BRPix
+    var charge = await brpix.createCashIn({
+      amount: cfg.amount,
+      description: cfg.description,
+      external_reference: ref,
+      expires_in: "3600"
+    });
+    if (!charge.ok || !charge.data || !charge.data.pix) {
+      res.status(502).json({ error: "brpix_failed", detail: charge.data && (charge.data.error || charge.data.error_code) });
+      return;
+    }
+    var d = charge.data;
+    var txid = d.txid || d.id;
+
+    // 2) Persiste o pedido (correlação do webhook)
+    var now = new Date();
+    var orderDoc = {
+      _id: ref, externalReference: ref, txid: txid,
+      funnelStep: resolved.key, amount: cfg.amount, productName: cfg.productName,
+      status: "pending",
+      customer: { name: customer.name, phone: customer.phone, pixKey: customer.pixKey, email: email, document: cpf },
+      utms: utms,
+      utmifySent: { pending: false, paid: false },
+      createdAt: now, paidAt: null
+    };
+    try {
+      var col = await mongo.getOrders();
+      await col.insertOne(orderDoc);
+    } catch (e) { /* não bloqueia o checkout se o Mongo falhar; loga */ console.error("[criar-pix] mongo", e.message); }
+
+    // 3) Utmify — pedido pendente (não bloqueia a resposta ao cliente)
+    utmify.sendOrder({
+      orderId: ref, productId: resolved.key, productName: cfg.productName, amount: cfg.amount,
+      customer: { name: customer.name, email: email, phone: customer.phone, document: cpf },
+      utms: utms, status: "waiting_payment", createdAt: now, approvedDate: null
+    }).then(function (r) {
+      if (r.ok) mongoMark(ref, "utmifySent.pending", true);
+    }).catch(function (e) { console.error("[criar-pix] utmify", e.message); });
+
+    // 4) Responde ao browser
+    res.status(200).json({
+      ref: ref, txid: txid,
+      qr_code: d.pix.qr_code,
+      qr_code_image: d.pix.qr_code_image,
+      expires_at: d.pix.expires_at || d.expires_at || null
+    });
+  } catch (err) {
+    console.error("[criar-pix] erro", err);
+    res.status(500).json({ error: "internal" });
+  }
+};
+
+async function mongoMark(ref, field, val) {
+  try { var col = await mongo.getOrders(); var s = {}; s[field] = val; await col.updateOne({ _id: ref }, { $set: s }); }
+  catch (e) { console.error("[mongoMark]", e.message); }
+}

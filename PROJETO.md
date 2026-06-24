@@ -387,8 +387,18 @@ saldo, chip "Banco Central", contador, copia-e-cola, rodapé CNPJ. Lê `?step=` 
 `location.search`. **Backend ainda é STUB** (`createPix` mock + botão dev "simular pagamento",
 `DEV=true`); QR é placeholder. Imagens em `checkout/{front,upsell1,upsell2,RA}.webp`.
 
-**Status:** Fases 1–4 concluídas. **Em andamento: Fase 5 (integração real)** — Vercel Functions
-(`/api/checkout/criar-pix`, `/status`, `/api/webhooks/brpix`) + BRPix + MongoDB + Utmify.
+**Fase 5 (integração) — backend construído (24/06/2026):** Vercel Functions + libs (ver
+`docs/checkout/05-integracao.md`). Endpoints `/api/checkout/criar-pix`, `/api/checkout/status`,
+`/api/webhooks/brpix`; libs em `lib/` (prices, brpix, utmify, mongo, orders, markPaid). Frontend
+ligado ao backend real (polling + `?next=` para avançar no funil; `?mock=1` p/ preview de UI).
+**Testado de verdade:** Utmify (orders pending/paid com UTMs ✅), MongoDB ✅, `markPaid` idempotente ✅,
+`genCpf` mod-11 ✅, BRPix auth ✅.
+**⚠️ Blocker externo:** `POST /pix/cash-in` da BRPix retorna **500 `BRPIX_ERROR`** (lado deles) — abrir
+chamado pedindo habilitação de **cash-in/recebimento** (protocolos no doc). Sem isso não gera o PIX.
+**Pendente (após cash-in OK):** wire dos botões do funil (V1 + links acesso/back) para `/checkout/`,
+env vars na Vercel, `0.0.0.0/0` no Atlas.
+
+**Status:** Fases 1–4 concluídas; Fase 5 com backend pronto e testado (exceto cash-in, bloqueado na BRPix).
 
 > ⚠️ Mudança local não comitada: remoção do delay dos botões do `acesso` (teste de UTMs) permanece
 > só na working tree, fora deste commit de documentação.
@@ -436,3 +446,4 @@ saldo, chip "Banco Central", contador, copia-e-cola, rodapé CNPJ. Lê `?step=` 
 | `52c9784` | Corrige checkout dws1/upsell2 (link na chave e no chunk corretos) |
 | `59e6de6` | Migra checkout dws1/upsell2 para o gateway brpix (esvazia `disru`) |
 | `8fcb16f` | Documenta projeto do checkout próprio (brand, lógica, UX) + skills UI/UX e `.env.example` |
+| `39a24f6` | Fase 4: UI do checkout próprio (HTML+CSS+JS sem build, em `/checkout/`) |
