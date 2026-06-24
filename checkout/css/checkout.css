@@ -1,0 +1,235 @@
+/* ============================================================
+   Checkout Cash No Pix — estilos (sem build, tokens da marca)
+   Fonte da verdade do brand: docs/BRAND.md
+   ============================================================ */
+
+/* ---- Work Sans (self-hosted, reaproveita os arquivos do funil) ---- */
+@font-face{font-family:"Work Sans";font-style:normal;font-weight:400;font-display:swap;
+  src:url(/funil-2/acesso/fonts/c9e6921c7fc300d8-s.p.woff2) format("woff2")}
+@font-face{font-family:"Work Sans";font-style:normal;font-weight:500;font-display:swap;
+  src:url(/funil-2/acesso/fonts/c9e6921c7fc300d8-s.p.woff2) format("woff2")}
+@font-face{font-family:"Work Sans";font-style:normal;font-weight:600;font-display:swap;
+  src:url(/funil-2/acesso/fonts/c9e6921c7fc300d8-s.p.woff2) format("woff2")}
+@font-face{font-family:"Work Sans";font-style:normal;font-weight:700;font-display:swap;
+  src:url(/funil-2/acesso/fonts/c9e6921c7fc300d8-s.p.woff2) format("woff2")}
+@font-face{font-family:"Work Sans";font-style:normal;font-weight:800;font-display:swap;
+  src:url(/funil-2/acesso/fonts/c9e6921c7fc300d8-s.p.woff2) format("woff2")}
+
+:root{
+  --primary:#58b947;
+  --primary-dark:#49a039;
+  --bg:#f0f0f0;          /* secondary do brand como fundo da página */
+  --card:#ffffff;
+  --red:#db282c;
+  --gray1:#37474f;
+  --ink:#0f1115;
+  --muted:rgba(0,0,0,.55);
+  --line:rgba(0,0,0,.10);
+  --radius:7px;
+  --radius-lg:13px;
+  --font:"Work Sans","Segoe UI",Arial,sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100dvh;
+  padding:0 0 40px;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------------- Header sticky ---------------- */
+.head{
+  position:sticky;top:0;z-index:50;width:100%;
+  display:flex;align-items:center;
+  padding:9px 14px;
+  background:#fff;border-bottom:1px solid var(--line);
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+}
+.ra-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#fff;border:1px solid var(--line);border-radius:999px;
+  padding:4px 12px 4px 4px;text-decoration:none;color:var(--gray1);
+}
+.ra-badge img{border-radius:50%;display:block}
+.ra-badge__txt{font-size:10px;line-height:1.15;font-weight:500}
+.ra-badge__txt b{color:var(--primary);font-weight:800}
+
+/* ---------------- Card ---------------- */
+.wrap{width:100%;max-width:420px;margin:14px auto 0;padding:0 16px}
+.card{
+  background:var(--card);border-radius:var(--radius-lg);
+  border:1px solid var(--line);
+  box-shadow:0 10px 30px rgba(20,40,20,.07);
+  padding:20px 18px 14px;
+}
+
+/* ---------------- Resumo ---------------- */
+.balance{
+  text-align:center;background:rgba(88,185,71,.10);
+  border:1px solid rgba(88,185,71,.25);border-radius:var(--radius);
+  padding:12px 10px;margin-bottom:16px;
+}
+.balance__label{display:block;font-size:12px;font-weight:600;color:var(--gray1);
+  text-transform:uppercase;letter-spacing:.06em}
+.balance__value{display:block;color:var(--primary);font-size:30px;font-weight:800;line-height:1.1;
+  margin-top:2px;animation:scale-down-money 1.6s ease-in-out infinite}
+
+.product{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.product__img{border-radius:var(--radius);object-fit:contain;background:#fff;flex-shrink:0;
+  border:1px solid var(--line)}
+.product__info{flex:1;min-width:0}
+.product__name{margin:0;font-size:15px;font-weight:700;line-height:1.2}
+.product__desc{margin:3px 0 0;font-size:12px;color:var(--muted);line-height:1.3}
+.product__price{ text-align:right;flex-shrink:0}
+.product__price-value{font-size:18px;font-weight:800;color:var(--ink)}
+
+.chip{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(88,185,71,.12);color:var(--primary-dark);
+  border-radius:var(--radius);padding:8px 10px;
+  font-size:11.5px;font-weight:600;line-height:1.25;
+}
+.chip svg{flex-shrink:0}
+
+/* ---------------- Stage ---------------- */
+.stage{margin-top:16px}
+
+/* Campos de formulário (label acima, erro abaixo) */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:13px}
+.field label{font-size:13px;font-weight:600;color:var(--gray1)}
+.field input{
+  font-family:inherit;font-size:15px;color:var(--ink);
+  background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);
+  padding:12px 13px;outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.field input::placeholder{color:rgba(0,0,0,.4)}
+.field input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(88,185,71,.18)}
+.field input.is-invalid{border-color:var(--red);box-shadow:0 0 0 3px rgba(219,40,44,.14)}
+.field__hint{font-size:11.5px;color:var(--muted)}
+.field__err{font-size:11.5px;color:var(--red);min-height:0;display:none}
+.field__err.show{display:block}
+.field.shake{animation:shake .3s ease-in-out}
+
+/* Informações validadas */
+.validated{border:1px solid rgba(88,185,71,.3);border-radius:var(--radius);
+  background:rgba(88,185,71,.06);padding:13px}
+.validated__head{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;
+  color:var(--gray1);margin-bottom:10px}
+.validated__list{margin:0;display:flex;flex-direction:column;gap:8px}
+.validated__list>div{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.validated__list dt{color:var(--muted);margin:0}
+.validated__list dd{margin:0;font-weight:600;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link{background:none;border:0;color:var(--primary-dark);font-family:inherit;font-size:12.5px;
+  font-weight:600;cursor:pointer;padding:8px 0 0;text-decoration:underline}
+
+/* CTA principal (botão KM da marca) */
+.cta{
+  width:100%;border:0;cursor:pointer;font-family:inherit;
+  background:var(--primary);color:#fff;font-weight:700;font-size:16px;line-height:1;
+  padding:16px 14px;border-radius:var(--radius);margin-top:4px;
+  transition:transform .12s cubic-bezier(.22,1,.36,1),background .15s;
+  animation:scale-down 1.6s ease-in-out infinite;
+}
+.cta:hover{background:var(--primary-dark)}
+.cta:active{transform:scale(.98)}
+.cta:disabled{opacity:.55;cursor:not-allowed;animation:none}
+.cta--alt{background:var(--gray1);animation:none;margin-top:10px}
+.cta--alt:hover{background:#2b383e}
+
+/* ---------------- Generating (skeleton) ---------------- */
+.generating{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0}
+.sk{background:linear-gradient(90deg,#eee,#f5f5f5,#eee);border-radius:var(--radius);
+  animation:pulse 1.4s ease-in-out infinite}
+.sk--qr{width:200px;height:200px;border-radius:var(--radius-lg)}
+.sk--line{width:100%;height:14px}
+.sk--short{width:60%}
+
+/* ---------------- Awaiting ---------------- */
+.awaiting{display:flex;flex-direction:column;align-items:center}
+.qr{padding:10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);
+  animation:qr-reveal .3s cubic-bezier(.22,1,.36,1) both}
+.qr img{display:block;width:220px;height:220px;image-rendering:pixelated}
+.copy{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  margin-top:16px;border:0;cursor:pointer;font-family:inherit;
+  background:var(--primary);color:#fff;font-weight:700;font-size:15px;
+  padding:14px;border-radius:var(--radius);transition:transform .12s,background .15s}
+.copy:hover{background:var(--primary-dark)}
+.copy:active{transform:scale(.98)}
+.copy.copied{background:var(--primary-dark)}
+.copy__code{width:100%;margin-top:9px;font-family:inherit;font-size:11.5px;color:var(--muted);
+  text-align:center;background:#f7f7f7;border:1px dashed var(--line);border-radius:var(--radius);
+  padding:9px;overflow:hidden;text-overflow:ellipsis}
+
+.status{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13.5px;font-weight:600;color:var(--gray1)}
+.status__time{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--ink)}
+.status__time.warn{color:var(--red)}
+.status__dots{display:inline-flex;gap:4px}
+.status__dots i{width:7px;height:7px;border-radius:50%;background:var(--primary);
+  animation:dot 1s ease-in-out infinite}
+.status__dots i:nth-child(2){animation-delay:.2s}
+.status__dots i:nth-child(3){animation-delay:.4s}
+
+.howto{margin:16px 0 0;padding-left:20px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.howto b{color:var(--gray1)}
+
+.dev-pay{margin-top:14px;width:100%;background:#fff7d6;border:1px dashed #d9b400;color:#8a6d00;
+  font-family:inherit;font-size:12px;padding:8px;border-radius:var(--radius);cursor:pointer}
+
+/* ---------------- Expired ---------------- */
+.expired{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0}
+.expired__seal{background:rgba(219,40,44,.1);color:var(--red);border:1px solid rgba(219,40,44,.3);
+  font-weight:700;padding:8px 16px;border-radius:999px;font-size:14px}
+
+/* ---------------- Paid ---------------- */
+.paid{display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 0 14px}
+.paid__check{margin-bottom:10px}
+.paid__title{margin:6px 0 4px;font-size:22px;font-weight:800;color:var(--primary)}
+.paid__circle{stroke-dasharray:188;stroke-dashoffset:188;animation:draw .5s ease-out forwards}
+.paid__tick{stroke-dasharray:48;stroke-dashoffset:48;animation:draw .3s ease-out .35s forwards}
+
+/* ---------------- Footer ---------------- */
+.foot{margin-top:18px;padding-top:13px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.foot__pix{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--gray1)}
+.foot__legal{font-size:10.5px;color:rgba(0,0,0,.45)}
+
+.muted{color:var(--muted);font-size:13px}
+.center{text-align:center}
+
+/* ---------------- Visibilidade por estado ---------------- */
+.stage>[data-when]{display:none}
+.card[data-state="input"] .stage>.form,
+.card[data-state="input"] .stage>.validated,
+.card[data-state="input"] .stage>.cta{display:block}
+.card[data-state="input"] .form{display:flex;flex-direction:column}
+.card[data-state="generating"] .stage>.generating{display:flex}
+.card[data-state="awaiting"]   .stage>.awaiting{display:flex}
+.card[data-state="expired"]    .stage>.expired{display:flex}
+
+/* modo front vs upsell controla form/validated */
+.card[data-mode="front"]  .validated{display:none !important}
+.card[data-mode="upsell"] .form{display:none !important}
+
+/* paid toma o card */
+.paid[data-when="paid"]{display:none}
+.card[data-state="paid"] .summary,
+.card[data-state="paid"] .stage{display:none}
+.card[data-state="paid"] .paid{display:flex}
+
+/* ---------------- Keyframes (reaproveita a marca) ---------------- */
+@keyframes scale-down{0%{transform:scale(1.03)}50%{transform:scale(.97)}100%{transform:scale(1.03)}}
+@keyframes scale-down-money{0%{transform:scale(1.08)}50%{transform:scale(.98)}100%{transform:scale(1.08)}}
+@keyframes pulse{50%{opacity:.5}}
+@keyframes dot{0%,100%{transform:scale(.7);opacity:.5}50%{transform:scale(1.1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+@keyframes qr-reveal{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* ---------------- Reduced motion ---------------- */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}

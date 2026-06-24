@@ -377,7 +377,18 @@ dws1 R$47, upsell2 R$48,93, upsell3 Silver/Gold/Diamond 67/97/57). Saldos exibid
 upsell1/2 R$1.466,74). Nomes: front "Ativação de cadastro", upsell1 "Taxa anti-fraude", upsell2 "Taxa IOF".
 Chip "verificada pelo Banco Central"; rodapé "CASH NO PIX LTDA — CNPJ 34.451.628/0001-25".
 
-**Status:** Fases 1 (brand), 2 (lógica) e 3 (UX) concluídas. Próximo: Fase 4 (UI) e Fase 5 (integração).
+**Fase 4 (UI) — concluída (24/06/2026):** checkout próprio em **HTML+CSS+JS puro (sem build)** na
+pasta **`checkout/`** (`index.html` + `css/checkout.css` + `js/checkout.js`), servido em `/checkout/`.
+Stack escolhida pela simplicidade/zero-build (encaixa no deploy estático atual; backend será Vercel
+Functions). Reaproveita os tokens da marca (verde `#58B947`, Work Sans, raio 7px, `scale-down`).
+Recursos: card único que troca de estado (input → gerando → aguardando → pago/expirado), modos
+front (form nome/telefone/chave PIX) e upsell ("Informações validadas"), selo RA em header **sticky**,
+saldo, chip "Banco Central", contador, copia-e-cola, rodapé CNPJ. Lê `?step=` e captura UTMs de
+`location.search`. **Backend ainda é STUB** (`createPix` mock + botão dev "simular pagamento",
+`DEV=true`); QR é placeholder. Imagens em `checkout/{front,upsell1,upsell2,RA}.webp`.
+
+**Status:** Fases 1–4 concluídas. **Em andamento: Fase 5 (integração real)** — Vercel Functions
+(`/api/checkout/criar-pix`, `/status`, `/api/webhooks/brpix`) + BRPix + MongoDB + Utmify.
 
 > ⚠️ Mudança local não comitada: remoção do delay dos botões do `acesso` (teste de UTMs) permanece
 > só na working tree, fora deste commit de documentação.
@@ -424,3 +435,4 @@ Chip "verificada pelo Banco Central"; rodapé "CASH NO PIX LTDA — CNPJ 34.451.
 | `433946c` | Alterações de links de checkout (commit do usuário) |
 | `52c9784` | Corrige checkout dws1/upsell2 (link na chave e no chunk corretos) |
 | `59e6de6` | Migra checkout dws1/upsell2 para o gateway brpix (esvazia `disru`) |
+| `8fcb16f` | Documenta projeto do checkout próprio (brand, lógica, UX) + skills UI/UX e `.env.example` |
