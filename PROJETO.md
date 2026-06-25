@@ -505,3 +505,4 @@ sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópia
 | `c8d171e` | Fix Utmify pending: await em vez de fire-and-forget (serverless) |
 | `ef05dc7` | Adiciona produto de teste (`?step=teste`, R$5,99) |
 | `ce687db` | Wire do funil: botões de compra apontam para o checkout próprio |
+| `1f78edf` | Embaralha códigos do cashback + URLs de oferta não-sequenciais (slugs) |
