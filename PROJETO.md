@@ -4,6 +4,12 @@
 
 Site de funil de vendas chamado **Cash No Pix** (cashnopixbr.site), hospedado na Vercel, com repositório no GitHub em `assombradev/mycapix`. É um export estático de uma aplicação Next.js com `assetPrefix: "/funil-2"`.
 
+> **Estado atual (25/06/2026):** o funil usa um **checkout PIX próprio** (`/checkout/`, integrado à API
+> da BRPix + MongoDB + Utmify), substituindo o gateway antigo (`app.cashnopixbr.site`). Tracking de UTMs
+> validado de ponta a ponta. Detalhes em **`docs/checkout/`** (lógica, UX, integração) e nas sessões
+> datadas abaixo. **Pendência conhecida:** a navegação de *recusa/back* dos upsells usa caminhos limpos
+> (`/dws1`, `/upsell2`) que dão 404 (pré-existente; só o fluxo de **compra** foi religado ao checkout).
+
 ---
 
 ## Stack Tecnológica
@@ -11,11 +17,15 @@ Site de funil de vendas chamado **Cash No Pix** (cashnopixbr.site), hospedado na
 | Camada | Tecnologia |
 |---|---|
 | Frontend | Next.js (export estático) + React + Tailwind |
+| **Checkout próprio** | HTML+CSS+JS puro em `/checkout/` (sem build) |
+| **Backend pagamento** | Vercel Functions (`/api/checkout/*`, `/api/webhooks/brpix`) + libs em `lib/` |
+| **Gateway PIX** | BRPix API (`api.brpixsolutions.com`) — cash-in HMAC |
+| **Banco de pedidos** | MongoDB Atlas (`cashnopix.orders`) |
 | Animações | Lottie (`.lottie` e `.json`) via DotLottie |
 | Vídeos | Vturb / Converteai (VSL player) |
-| Tracking | Utmify Pixel (único rastreador) |
-| Servidor local | Node.js (server.js) — apenas para dev |
-| Hospedagem | Vercel (static site, framework = Other) |
+| Tracking | Utmify — Pixel (front) + **API de orders** (server-side, via nosso backend) |
+| Servidor local | Node.js (server.js) — serve estáticos + roda as Functions em dev |
+| Hospedagem | Vercel (static site + Functions, framework = Other) |
 | Repositório | https://github.com/assombradev/mycapix |
 | Domínio | https://cashnopixbr.site |
 
@@ -80,20 +90,27 @@ upsell3 (compra) →  login    (tela de acesso ao produto)
 
 ## Checkouts Configurados
 
-Gateway atual: **brpix** (links `https://app.cashnopixbr.site/c/<hash>`). O gateway antigo
-(**disrupt**) foi descontinuado — ver "Mecanismo de gateway" abaixo.
+**Atual (desde 25/06/2026):** todos os botões de compra apontam para o **checkout próprio** (`/checkout/`),
+passando `step`/`tier`/`next` no **hash** (`/checkout/#step=<etapa>&next=/o/<slug>`). Ver `docs/checkout/`.
 
-| Página | Link de checkout (brpix) | Onde fica no código |
+| Página | Destino do botão (checkout próprio) | Onde fica no código |
 |---|---|---|
-| acesso | `/c/356d908237858cf1` | hardcoded no chunk da página |
-| back1 | `/c/b44d252fca359cfa` | hardcoded no chunk da página |
-| back2 | `/c/4eb17cb7f7aee527` | hardcoded no chunk da página |
-| upsell1 | `/c/7dbcb6dd50e88f2e` | config `up1P.pay` |
-| dws1 | `/c/41f21fa2a8708379` | config `dws1P.pay` |
-| upsell2 | `/c/7b14b3428db56842` | config `up2P.pay` |
-| upsell3 | ⚠️ **sem link** (ainda no gateway antigo) | config `up3P.pay` (silver/gold/diamond vazios) |
+| acesso | `/checkout/#step=front&next=/o/pb622z43` | `href` no chunk + V1 |
+| back1 | `/checkout/#step=back1&next=/o/pb622z43` | `href` no chunk + `<a>` no index.html |
+| back2 | `/checkout/#step=back2&next=/o/pb622z43` | `href` no chunk + `<a>` no index.html |
+| upsell1 | `/checkout/#step=upsell1&next=/o/eaetc63e` | config `up1P.pay` |
+| dws1 | `/checkout/#step=dws1&next=/o/eaetc63e` | config `dws1P.pay` |
+| upsell2 | `/checkout/#step=upsell2&next=/o/xi92jg6y` | config `up2P.pay` |
+| upsell3 | `/checkout/#step=upsell3&tier=<t>&next=/o/x3eyn6it` | config `up3P.pay.{silver,gold,diamond}` |
 
-### Mecanismo de gateway (IMPORTANTE)
+Os `next` usam **slugs aleatórios** (rewrites no `vercel.json` → `/funil-2/<page>/`): `pb622z43`=upsell1,
+`eaetc63e`=upsell2, `xi92jg6y`=upsell3, `x3eyn6it`=login. Preços/produtos por etapa: `lib/prices.js`.
+
+> ⚠️ O **gateway antigo** (`app.cashnopixbr.site`) **não é mais usado**. A seção abaixo é histórica —
+> explica o componente `V1` (ainda em uso) e por isso os `step`/`next` vão no **hash** (o `V1` sobrescreve
+> a query com as UTMs; o hash sobrevive).
+
+### Mecanismo de gateway (histórico — `V1` ainda em uso)
 
 As páginas upsell1/2/3 e dws1 montam o botão de compra a partir de um **objeto de config**
 bundlado no chunk da página, com uma entrada por página/fluxo:
