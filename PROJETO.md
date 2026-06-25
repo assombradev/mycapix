@@ -484,3 +484,4 @@ produção (sem pagar: carregar página → clicar comprar → conferir produto/
 | `e6d3faa` | Fix conexão Mongo: ignora query string da URI (robusto a truncamento) |
 | `c8d171e` | Fix Utmify pending: await em vez de fire-and-forget (serverless) |
 | `ef05dc7` | Adiciona produto de teste (`?step=teste`, R$5,99) |
+| `ce687db` | Wire do funil: botões de compra apontam para o checkout próprio |
