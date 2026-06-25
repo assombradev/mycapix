@@ -69,15 +69,18 @@ module.exports = async function (req, res) {
       await col.insertOne(orderDoc);
     } catch (e) { /* não bloqueia o checkout se o Mongo falhar; loga */ console.error("[criar-pix] mongo", e.message); }
 
-    // 3) Utmify — pedido pendente (não bloqueia a resposta ao cliente)
-    utmify.sendOrder({
-      orderId: ref, productId: resolved.key, productName: cfg.code, amount: cfg.amount,
-      customer: { name: customer.name, email: email, phone: customer.phone, document: cpf },
-      utms: utms, status: "waiting_payment", createdAt: now, approvedDate: null,
-      isTest: process.env.UTMIFY_TEST === "true"
-    }).then(function (r) {
-      if (r.ok) mongoMark(ref, "utmifySent.pending", true);
-    }).catch(function (e) { console.error("[criar-pix] utmify", e.message); });
+    // 3) Utmify — pedido pendente. AWAIT obrigatório: em serverless a função congela
+    //    assim que responde, então um .then() fire-and-forget nunca completaria.
+    try {
+      var up = await utmify.sendOrder({
+        orderId: ref, productId: resolved.key, productName: cfg.code, amount: cfg.amount,
+        customer: { name: customer.name, email: email, phone: customer.phone, document: cpf },
+        utms: utms, status: "waiting_payment", createdAt: now, approvedDate: null,
+        isTest: process.env.UTMIFY_TEST === "true"
+      });
+      if (up.ok) await mongoMark(ref, "utmifySent.pending", true);
+      else console.error("[criar-pix] utmify pending HTTP", up.status, JSON.stringify(up.data).slice(0, 150));
+    } catch (e) { console.error("[criar-pix] utmify", e.message); }
 
     // 4) Responde ao browser
     res.status(200).json({
