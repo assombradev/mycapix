@@ -433,6 +433,26 @@ substituindo o gateway antigo (`app.cashnopixbr.site`).
 **Status:** Fases 1–5 concluídas e validadas; **wire do funil feito**. Testar o fluxo completo em
 produção (sem pagar: carregar página → clicar comprar → conferir produto/preço/UTMs e o QR gerar).
 
+## Ajustes pós-wire — Sessão 25/06/2026
+
+**1. Códigos de validação do cashback (confiança):** a tela de "digite o código" (módulo `6316`/
+redeem-cashback no chunk `327`) sorteava de um array com códigos **sequenciais** (`ABCD`, `EFGH`,
+`IJKL`…), que passavam impressão de falso. Substituído por **50 códigos aleatórios de 4 letras sem
+sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópias do chunk `327` (+ `524`).
+
+**2. URLs das ofertas não-sequenciais (anti-enumeração):** os `next` do checkout apontavam para
+`/funil-2/upsell1/`, `/upsell2/`… (previsível: trocar o número acessava a próxima oferta). Agora usam
+**slugs aleatórios** via rewrite no `vercel.json` (e `server.js` p/ dev):
+| Slug | Página |
+|---|---|
+| `/o/pb622z43` | upsell1 |
+| `/o/eaetc63e` | upsell2 |
+| `/o/xi92jg6y` | upsell3 |
+| `/o/x3eyn6it` | login |
+> Limitação (nível A): os **assets** ainda carregam de `/funil-2/<page>/`, então quem abrir o DevTools
+> veria o caminho real — mas o **antidebug.js** está **ativo** (`_DISABLED=false` → redireciona pro
+> YouTube ao detectar DevTools), o que mitiga. Blindagem total exigiria renomear as pastas (nível B).
+
 ## Deploy — Passo a Passo
 
 1. Faça as alterações locais

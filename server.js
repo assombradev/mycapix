@@ -79,7 +79,11 @@ const server = http.createServer((req, res) => {
   const rewrites = [
     [/^\/laco\.webp$/, '/funil-2/acesso/laco.webp'],
     [/^\/lotties\/(.*)$/, '/funil-2/acesso/lotties/$1'],
-    [/^\/img\/(.*)$/, '/funil-2/acesso/img/$1']
+    [/^\/img\/(.*)$/, '/funil-2/acesso/img/$1'],
+    [/^\/o\/pb622z43$/, '/funil-2/upsell1/index.html'],
+    [/^\/o\/eaetc63e$/, '/funil-2/upsell2/index.html'],
+    [/^\/o\/xi92jg6y$/, '/funil-2/upsell3/index.html'],
+    [/^\/o\/x3eyn6it$/, '/funil-2/login/index.html']
   ];
   for (const [re, dest] of rewrites) {
     if (re.test(resolvedPathname)) {

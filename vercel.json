@@ -4,6 +4,10 @@
     { "source": "/laco.webp", "destination": "/funil-2/acesso/laco.webp" },
     { "source": "/lotties/:path*", "destination": "/funil-2/acesso/lotties/:path*" },
     { "source": "/img/:path*", "destination": "/funil-2/acesso/img/:path*" },
+    { "source": "/o/pb622z43", "destination": "/funil-2/upsell1/index.html" },
+    { "source": "/o/eaetc63e", "destination": "/funil-2/upsell2/index.html" },
+    { "source": "/o/xi92jg6y", "destination": "/funil-2/upsell3/index.html" },
+    { "source": "/o/x3eyn6it", "destination": "/funil-2/login/index.html" },
     { "source": "/", "destination": "/funil-2/acesso/index.html" }
   ],
   "headers": [
