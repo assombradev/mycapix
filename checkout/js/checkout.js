@@ -8,6 +8,7 @@
 
   /* ---------- Configuração por etapa (valores em centavos) ---------- */
   var STEPS = {
+    teste:   { mode:"front",  name:"Produto Teste", desc:"(teste de integração)", amount:599, balance:59900, img:"front.webp" },
     front:   { mode:"front",  name:"Ativação de cadastro", desc:"(valor será reembolsado junto ao saldo disponível)", amount:3700,  balance:46738,  img:"front.webp"  },
     back1:   { mode:"front",  name:"Ativação de cadastro", desc:"(valor será reembolsado junto ao saldo disponível)", amount:2700,  balance:46738,  img:"front.webp"  },
     back2:   { mode:"front",  name:"Ativação de cadastro", desc:"(valor será reembolsado junto ao saldo disponível)", amount:1990,  balance:46738,  img:"front.webp"  },
