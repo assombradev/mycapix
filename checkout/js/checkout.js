@@ -26,10 +26,13 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   function brl(cents){ return "R$ " + (cents/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-  var params = new URLSearchParams(location.search);
-  var MOCK = params.get("mock") === "1";   // preview de UI sem backend (?mock=1)
-  var rawStep = params.get("step") || "front";
-  var rawTier = params.get("tier") || null;
+  var params = new URLSearchParams(location.search);           // UTMs vêm aqui (V1 põe na search)
+  var hashParams = new URLSearchParams((location.hash || "").replace(/^#/, "")); // step/next/tier vêm no hash
+  function pget(k){ return hashParams.get(k) || params.get(k); } // hash tem prioridade; ?param= funciona p/ teste
+
+  var MOCK = pget("mock") === "1";   // preview de UI sem backend (#mock=1 ou ?mock=1)
+  var rawStep = pget("step") || "front";
+  var rawTier = pget("tier") || null;
   var stepKey = rawTier ? rawStep + ":" + rawTier : rawStep;
   var CFG = STEPS[stepKey] || STEPS.front;
 
@@ -203,9 +206,9 @@
     stopPolling(); stopCountdown();
     setState("paid");
     try{ var a=new Audio("/funil-2/sound/success.mp3"); a.play().catch(function(){}); }catch(e){}
-    // Avança no funil: o botão do funil informa a próxima página via ?next=
+    // Avança no funil: o botão do funil informa a próxima página via #next=
     setTimeout(function(){
-      var next = params.get("next");
+      var next = pget("next");
       if(next && /^\/[^/]/.test(next)){
         // preserva as UTMs ao seguir para a próxima etapa
         var q = new URLSearchParams();

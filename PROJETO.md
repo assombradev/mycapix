@@ -413,11 +413,25 @@ e as UTMs**. Dois bugs encontrados e corrigidos no caminho:
 `pending`+`paid` direto via `lib/utmify.sendOrder` (ex.: `orderId` reconhecível) e procurar no painel.
 Produto de teste barato: `?step=teste` (R$5,99, code `offer000`).
 
-**Status:** Fases 1–5 concluídas e **validadas em produção**. Falta só o **wire do funil** (apontar os
-botões de compra para `/checkout/`).
+**Wire do funil (25/06/2026):** todos os botões de compra passaram a apontar para o checkout próprio,
+substituindo o gateway antigo (`app.cashnopixbr.site`).
+- **Mecanismo:** o `V1` **sobrescreve a query string** com as UTMs, então `step`/`next` vão no **hash**
+  (`/checkout/#step=<etapa>&tier=<>&next=/funil-2/<próxima>/`). O `V1` preserva o hash; o checkout lê
+  `step`/`tier`/`next` do hash e as UTMs da search. Cadeia de UTMs validada por simulação.
+- **`next` por etapa:** front/back1/back2 → upsell1; upsell1/dws1 → upsell2; upsell2 → upsell3;
+  upsell3(silver/gold/diamond) → login. URLs reais = `/funil-2/<page>/` (os caminhos limpos `/upsell1`
+  dão 404 em produção).
+- **Onde editei:** o link foi trocado em **3 lugares** por página onde existem: o chunk em `js/`, a cópia
+  em `_next/static/chunks/app/<page>/`, e o `<a href>` **estático** no `index.html` (render pré-hidratação
+  de back1/back2/dws1/upsell3). `node --check` em todos.
+- **Achados:** as duas cópias de chunk **divergiam** em algumas páginas (acesso `_next` tinha link órfão
+  `/payment/checkout/`; upsell1 `_next` tinha 2x); o **upsell3** estava no gateway antigo (`up3P.disru`
+  preenchido, `up3P.pay` vazio) → preenchi os `pay` por tier e esvaziei os `disru`. Órfãos não servidos
+  (`upsell2/js/page-7e1442…`, `funil-2/funil-2/acesso/…`) foram deixados como estão.
+- **Delay do acesso:** restaurado (a remoção de teste foi descartada via `git checkout`).
 
-> ⚠️ Mudança local não comitada: remoção do delay dos botões do `acesso` (teste de UTMs) permanece
-> só na working tree, fora deste commit de documentação.
+**Status:** Fases 1–5 concluídas e validadas; **wire do funil feito**. Testar o fluxo completo em
+produção (sem pagar: carregar página → clicar comprar → conferir produto/preço/UTMs e o QR gerar).
 
 ## Deploy — Passo a Passo
 
