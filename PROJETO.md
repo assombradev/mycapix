@@ -402,7 +402,19 @@ todo no `npm run dev`); `UTMIFY_TEST=true` marca pedidos como teste na Utmify (s
 **Falta testar:** webhook `charge.paid` real (precisa de pagamento; o polling cobre como fallback).
 **Pendente:** env vars na Vercel + `0.0.0.0/0` no Atlas; depois, wire dos botões do funil → `/checkout/`.
 
-**Status:** Fases 1–4 concluídas; Fase 5 funcional e testada (exceto webhook real, coberto por polling).
+**Validação em produção (24–25/06/2026):** fluxo completo confirmado — QR gerado, pagamento real,
+webhook (`paidSource: webhook`) e polling marcando pago, **venda aparecendo na Utmify com pending+paid
+e as UTMs**. Dois bugs encontrados e corrigidos no caminho:
+1. **Mongo na Vercel:** a env var `MONGODB_URI` foi truncada no painel (`?retryWrites` sem valor) →
+   `lib/mongo.js` passou a **ignorar a query string** e definir as opções pelo driver (robusto).
+2. **Utmify pending não enviava:** era *fire-and-forget* e a função serverless congelava após responder →
+   passou a **aguardar (`await`)** o envio do `waiting_payment` antes de responder.
+**Dica de teste (importante):** dá para validar a Utmify **sem pagar PIX** — basta enviar um pedido
+`pending`+`paid` direto via `lib/utmify.sendOrder` (ex.: `orderId` reconhecível) e procurar no painel.
+Produto de teste barato: `?step=teste` (R$5,99, code `offer000`).
+
+**Status:** Fases 1–5 concluídas e **validadas em produção**. Falta só o **wire do funil** (apontar os
+botões de compra para `/checkout/`).
 
 > ⚠️ Mudança local não comitada: remoção do delay dos botões do `acesso` (teste de UTMs) permanece
 > só na working tree, fora deste commit de documentação.
@@ -453,3 +465,8 @@ todo no `npm run dev`); `UTMIFY_TEST=true` marca pedidos como teste na Utmify (s
 | `39a24f6` | Fase 4: UI do checkout próprio (HTML+CSS+JS sem build, em `/checkout/`) |
 | `854dc48` | Fase 5: backend do checkout (Vercel Functions BRPix + MongoDB + Utmify) |
 | `46cef7f` | Fase 5: corrige leitura da resposta real da BRPix (cash-in 202, campos flat) |
+| `bd7d717` | Fase 5: camufla nome do produto (offerNNN) + dev server roda Functions |
+| `38ab073` | Fixa Node 22.x no engines (remove warning da Vercel) |
+| `e6d3faa` | Fix conexão Mongo: ignora query string da URI (robusto a truncamento) |
+| `c8d171e` | Fix Utmify pending: await em vez de fire-and-forget (serverless) |
+| `ef05dc7` | Adiciona produto de teste (`?step=teste`, R$5,99) |
