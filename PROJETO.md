@@ -174,6 +174,27 @@ inserido no fim do `<head>`, logo antes de `</head>`:
 </script>
 ```
 
+### Script de lead-id da Utmify (rodapé) — 26/06/2026
+
+O suporte da Utmify forneceu um script auxiliar que **enriquece o `utm_source`** com o `_id`
+do lead (gravado pelo próprio Pixel Utmify no `localStorage`: chave `lead` p/ Meta/`FB`,
+`lead-google` p/ Google). Com isso a Utmify consegue casar pageview/venda com o lead específico
+e mandar dados melhores ao **Meta** (melhora a marcação das campanhas). **Não é um pixel do Meta**
+— continua valendo a regra de rastreador único; ele só alimenta melhor o Pixel Utmify que já existe.
+
+Inserido no **rodapé** (antes de `</body>`, logo antes do `antidebug.js`) nas **8 páginas** do funil.
+Pontos analisados antes de subir:
+
+- **Só mexe na query string** (`utm_source`/`xcod`); **nunca no hash** → `step/tier/next` do checkout
+  ficam intactos (`url.toString()` preserva o hash no `location.replace`).
+- **Reload único e auto-limitante:** só dá `location.replace` quando o id ainda não está no `utm_source`
+  e há lead no storage; depois do reload `desired === current` → não recarrega de novo (sem loop). Na
+  prática só recarrega na 1ª página (`acesso`); nas etapas seguintes o id já vem na URL.
+- **Sem conflito com o chunk V1 (327):** o V1 preserva o `utm_source` como string (o id vira parte do
+  valor `FBjLj<id>`), então reaplica intacto.
+- **Não foi colocado no `/checkout`:** o id já chega enriquecido de cima (Utmify reescreve os links de
+  saída) e assim evita qualquer reload na página de pagamento.
+
 ### Pixels removidos (não usar mais)
 | Plataforma | ID antigo |
 |---|---|
@@ -523,3 +544,5 @@ sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópia
 | `ef05dc7` | Adiciona produto de teste (`?step=teste`, R$5,99) |
 | `ce687db` | Wire do funil: botões de compra apontam para o checkout próprio |
 | `1f78edf` | Embaralha códigos do cashback + URLs de oferta não-sequenciais (slugs) |
+| `61ffa63` | Doc: atualiza PROJETO.md para o estado atual (checkout próprio no ar, slugs) |
+| `6ed058c` | Tracking: script lead-id da Utmify no rodapé das 8 páginas (enriquece utm_source p/ Meta) |
