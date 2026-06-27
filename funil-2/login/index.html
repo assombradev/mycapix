@@ -65,4 +65,31 @@
   const interval = setInterval(() => { if (applyIfNeeded()) clearInterval(interval); }, POLL_MS);
 })();
 </script>
+<!-- UTMIFY: IC (marca os botoes que vao pro checkout com a classe ic-checkout p/ a regra de Classe CSS da Utmify) -->
+<script>
+(function () {
+  function tag(root) {
+    try {
+      var scope = root || document;
+      scope.querySelectorAll('a[href*="/checkout/"]').forEach(function (el) {
+        el.classList.add("ic-checkout");
+      });
+      scope.querySelectorAll('button[class*="animate-scale-down"]').forEach(function (el) {
+        el.classList.add("ic-checkout");
+      });
+    } catch (e) {}
+  }
+  tag();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { tag(); });
+  }
+  var scheduled = false;
+  var obs = new MutationObserver(function () {
+    if (scheduled) return;
+    scheduled = true;
+    setTimeout(function () { scheduled = false; tag(); }, 300);
+  });
+  try { obs.observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+})();
+</script>
 <script src="/antidebug.js"></script></body></html>
