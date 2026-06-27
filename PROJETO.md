@@ -209,15 +209,24 @@ Pontos analisados antes de subir:
 
 ## Vídeos VSL (Vturb / Converteai)
 
-Conta Converteai/VTurb: `78d130da-9008-4e8e-aed9-46a76c1217ce`. São 4 VSLs no funil, mapeadas por página
-(o player é renderizado pelo chunk React de cada página):
+Conta Converteai/VTurb: `c5c5520a-6468-49b6-8fcd-2fdef181a90b` (migrada em **26/06/2026** — o plano da
+conta anterior `78d130da-…` expirou). São 4 VSLs no funil, mapeadas por página (o player é renderizado
+pelo chunk React de cada página):
 
 | VSL | ID do Player | m3u8 | Página | Obs |
 |---|---|---|---|---|
-| VSL 1 | `6a2c7a3cc24e5836ece8e8ac` | `6a2c7a28f04e41ecc574edd6` | acesso | botão 769s (~12min) |
-| VSL 2 | `6a2c79064eb77420ee4aec07` | `6a2c78fe57b5fea2c937cb63` | acesso | botão 355s (~6min) |
-| VSL 3 | `6a2edaffe3ec81421df549cd` | `6a2edae2bcb27b44d3e236ee` | upsell1 | |
-| VSL 4 | `6a2eef74d33ef46eda9d6e48` | `6a2eef5d5b719ab8be0e66df` | upsell2 | |
+| VSL 1 | `6a3f362908d228be16161a19` | `6a3f36198db7a18863912ba6` | acesso | botão 769s (~12min) |
+| VSL 2 | `6a3f365b2f7698b129fde737` | `6a3f3657d846aeb492a19e18` | acesso | botão 355s (~6min) |
+| VSL 3 | `6a3f366a2f7698b129fde749` | `6a3f365cd7338761a2d0d071` | upsell1 | |
+| VSL 4 | `6a3f3692db7d7e5918de1534` | `6a3f366c25039ab6bccbcc11` | upsell2 | |
+
+> **IDs antigos (conta `78d130da-…`, expirada):** VSL1 `6a2c7a3c…`/`6a2c7a28…`, VSL2 `6a2c7906…`/`6a2c78fe…`,
+> VSL3 `6a2edaff…`/`6a2edae2…`, VSL4 `6a2eef74…`/`6a2eef5d…`. Trocados em **3 lugares** por VSL: head do
+> `index.html` (preloads `player.js`/`main.m3u8`) **e** o embed `<vturb-smartplayer>`+script dentro do
+> chunk `page-<hash>.js` (nas duas cópias: `<page>/js/` e `_next/static/chunks/app/<page>/`). O gêmeo
+> `_next/.../app/upsell1/page-7e1442…` estava dessincronizado (apontava pro player ainda mais antigo
+> `68cd7140…` da conta `2e8fc70c-…`) e foi realinhado ao VSL 3 novo. O mapeamento das 2 VSLs do acesso
+> seguiu a ordem da página (1ª = VSL 1, 2ª = VSL 2).
 
 **Dica dev:** adicione `?nodelay=true` na URL para mostrar os botões imediatamente sem assistir o vídeo. Está programado nativamente no código da página.
 
@@ -546,3 +555,4 @@ sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópia
 | `1f78edf` | Embaralha códigos do cashback + URLs de oferta não-sequenciais (slugs) |
 | `61ffa63` | Doc: atualiza PROJETO.md para o estado atual (checkout próprio no ar, slugs) |
 | `6ed058c` | Tracking: script lead-id da Utmify no rodapé das 8 páginas (enriquece utm_source p/ Meta) |
+| `60f1485` | VSL: migra players VTurb para a conta nova (`c5c5520a`); realinha gêmeo `_next/upsell1` |
