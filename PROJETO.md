@@ -195,6 +195,26 @@ Pontos analisados antes de subir:
 - **Não foi colocado no `/checkout`:** o id já chega enriquecido de cima (Utmify reescreve os links de
   saída) e assim evita qualquer reload na página de pagamento.
 
+### Marcação de IC (InitiateCheckout) — classe `ic-checkout` — 27/06/2026
+
+A regra de **URL** da Utmify não marcava IC porque o **Pixel da Utmify não está na página `/checkout/`**
+(ela é custom, não tem o pixel) — a detecção por URL precisa do pixel carregado na página da URL-alvo.
+Optamos pela detecção por **Classe CSS**: regra da Utmify configurada com a classe **`ic-checkout`**.
+
+Como os botões de compra existem em 2 formas (`<a href="…/checkout/…">` nas estáticas **e** `<button>`
+sem href do componente **V1**, que navega via `onClick` — após a hidratação do React, os CTAs viram
+`<button>` do V1 em quase todas as páginas), um **script no rodapé** das 8 páginas adiciona a classe
+`ic-checkout` a:
+
+- `a[href*="/checkout/"]` (links diretos), **e**
+- `button[class*="animate-scale-down"]` (assinatura exclusiva do CTA do V1).
+
+Roda no load + `DOMContentLoaded` e re-aplica via `MutationObserver` (throttle 300ms) porque os botões
+aparecem **depois do vídeo**. Validado localmente: back2 (2 botões), upsell3 (3 planos marcados, os 3
+"Vou recusar" **não**), login (**0** — o botão "Acessar app" não tem `animate-scale-down`, fica de fora).
+A classe é só um marcador (não tem CSS associado, não afeta layout). **Para configurar na Utmify:** regra
+de detecção de IC = Classe CSS = `ic-checkout`.
+
 ### Pixels removidos (não usar mais)
 | Plataforma | ID antigo |
 |---|---|
@@ -556,3 +576,4 @@ sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópia
 | `61ffa63` | Doc: atualiza PROJETO.md para o estado atual (checkout próprio no ar, slugs) |
 | `6ed058c` | Tracking: script lead-id da Utmify no rodapé das 8 páginas (enriquece utm_source p/ Meta) |
 | `60f1485` | VSL: migra players VTurb para a conta nova (`c5c5520a`); realinha gêmeo `_next/upsell1` |
+| `a6e3133` | Tracking: marca botões de checkout com a classe `ic-checkout` (IC Utmify por Classe CSS) |
