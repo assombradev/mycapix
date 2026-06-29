@@ -583,3 +583,4 @@ sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópia
 | `6ed058c` | Tracking: script lead-id da Utmify no rodapé das 8 páginas (enriquece utm_source p/ Meta) |
 | `60f1485` | VSL: migra players VTurb para a conta nova (`c5c5520a`); realinha gêmeo `_next/upsell1` |
 | `a6e3133` | Tracking: marca botões de checkout com a classe `ic-checkout` (IC Utmify por Classe CSS) |
+| `7ba7bab` | Tracking: restringe `ic-checkout` ao produto front (acesso, back1, back2); remove das demais |
