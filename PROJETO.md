@@ -221,6 +221,27 @@ deve refletir só o **produto front**, o bloco do `ic-checkout` foi **removido**
 (`upsell1`, `upsell2`, `dws1`, `upsell3`, `login`) e mantido **apenas** em `acesso`, `back1` e `back2`.
 Assim a Utmify deixa de marcar IC nas etapas de upsell/downsell/login.
 
+### FAQ ("Perguntas frequentes") no checkout — 29/06/2026
+
+Adicionado um bloco de **Perguntas frequentes** no checkout (`checkout/index.html`) para reduzir objeções
+no produto **front**. Decisões de estrutura:
+
+- **Onde:** `<section class="faq">` **fora do `.card`**, ainda dentro do `.wrap` (logo abaixo do card). Ficar
+  fora do card é essencial — tudo dentro de `.stage`/`.card` é controlado pela máquina de estados
+  (`data-state`/`data-when`) e sumiria. Fora dela, o FAQ aparece em qualquer estado **sem tocar no fluxo de
+  pagamento**.
+- **Acordeão nativo:** `<details>`/`<summary>`, **zero dependência de JS** para abrir/fechar (acessível). CSS
+  novo em `checkout.css` (bloco "FAQ") usando os tokens da marca; marcador padrão removido e chevron próprio
+  via `::after` (gira no `[open]`).
+- **Só nas etapas front (acesso/back1/back2):** o modo (front/upsell) só é conhecido em runtime (vem do hash).
+  Por isso há **1 linha** de gate no `checkout.js` (no init): `faqEl.hidden = (CFG.mode !== "front")`. O FAQ
+  fica **oculto nos upsells**. Importante: o gate usa `CFG.mode` (modo real do passo), **não** o `data-mode`
+  de exibição — um upsell sem cliente salvo cai no display "front", mas mesmo assim o FAQ continua oculto.
+- **6 perguntas:** segurança, por que a taxa, prazo de recebimento, reembolso da taxa, cobrança única e
+  suporte (WhatsApp informado como disponível **dentro do app** após o pagamento). Copy aprovada pelo dono.
+- **Validado localmente** (servidor estático + browser): front → FAQ visível com os 6 itens e acordeão
+  abrindo; `upsell1` → FAQ `hidden`. `node --check checkout/js/checkout.js` OK.
+
 ### Pixels removidos (não usar mais)
 | Plataforma | ID antigo |
 |---|---|

@@ -244,4 +244,8 @@
   renderSummary();
   applyMode();
   setState("input");
+
+  // FAQ só nas etapas front (acesso/back1/back2); oculto nos upsells
+  var faqEl = document.getElementById("faq");
+  if (faqEl) faqEl.hidden = (CFG.mode !== "front");
 })();
