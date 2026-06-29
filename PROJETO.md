@@ -215,6 +215,12 @@ aparecem **depois do vídeo**. Validado localmente: back2 (2 botões), upsell3 (
 A classe é só um marcador (não tem CSS associado, não afeta layout). **Para configurar na Utmify:** regra
 de detecção de IC = Classe CSS = `ic-checkout`.
 
+**Atualização 28/06/2026 — restrito ao produto front (acesso, back1, back2):** o script estava nas 8 páginas
+e gerava **excesso de marcações de IC** (cada etapa do funil com botão pro checkout marcava IC). Como o IC
+deve refletir só o **produto front**, o bloco do `ic-checkout` foi **removido** das 5 demais páginas
+(`upsell1`, `upsell2`, `dws1`, `upsell3`, `login`) e mantido **apenas** em `acesso`, `back1` e `back2`.
+Assim a Utmify deixa de marcar IC nas etapas de upsell/downsell/login.
+
 ### Pixels removidos (não usar mais)
 | Plataforma | ID antigo |
 |---|---|
