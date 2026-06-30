@@ -632,3 +632,4 @@ sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópia
 | `a6e3133` | Tracking: marca botões de checkout com a classe `ic-checkout` (IC Utmify por Classe CSS) |
 | `7ba7bab` | Tracking: restringe `ic-checkout` ao produto front (acesso, back1, back2); remove das demais |
 | `50e6bfb` | Checkout: adiciona FAQ (Perguntas frequentes) só nas etapas front (acordeão `<details>`) |
+| `96d1411` | Fix(checkout): atualiza domínio da BRPix p/ `brpixpayments.com.br` (antigo caiu → 502 no PIX) |
