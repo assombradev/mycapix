@@ -5,8 +5,10 @@
 
 ## Base URL
 ```
-Produção: https://api.brpixsolutions.com
+Produção: https://brpixpayments.com.br
 ```
+> 🔄 Domínio atualizado em **30/06/2026**. O antigo `https://api.brpixsolutions.com` foi descontinuado
+> pela BRPix (caiu na noite de 29→30/06). As rotas permaneceram idênticas; somente o domínio mudou.
 > ⚠️ Documentação **não menciona URL de sandbox/teste** — confirmar com a BRPix (ver "Pendências").
 
 ---
@@ -105,7 +107,7 @@ Usado para **polling** enquanto o webhook não chega / fallback.
 ```js
 const path = `/pix/charge/${txid}`;
 const headers = buildHeaders("GET", path, null, SECRET, PUBLIC);
-const res = await fetch(`https://api.brpixsolutions.com${path}`, { headers });
+const res = await fetch(`https://brpixpayments.com.br${path}`, { headers });
 ```
 
 ---

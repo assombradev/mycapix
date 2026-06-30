@@ -19,7 +19,7 @@ Site de funil de vendas chamado **Cash No Pix** (cashnopixbr.site), hospedado na
 | Frontend | Next.js (export estático) + React + Tailwind |
 | **Checkout próprio** | HTML+CSS+JS puro em `/checkout/` (sem build) |
 | **Backend pagamento** | Vercel Functions (`/api/checkout/*`, `/api/webhooks/brpix`) + libs em `lib/` |
-| **Gateway PIX** | BRPix API (`api.brpixsolutions.com`) — cash-in HMAC |
+| **Gateway PIX** | BRPix API (`brpixpayments.com.br`) — cash-in HMAC |
 | **Banco de pedidos** | MongoDB Atlas (`cashnopix.orders`) |
 | Animações | Lottie (`.lottie` e `.json`) via DotLottie |
 | Vídeos | Vturb / Converteai (VSL player) |
@@ -241,6 +241,32 @@ no produto **front**. Decisões de estrutura:
   suporte (WhatsApp informado como disponível **dentro do app** após o pagamento). Copy aprovada pelo dono.
 - **Validado localmente** (servidor estático + browser): front → FAQ visível com os 6 itens e acordeão
   abrindo; `upsell1` → FAQ `hidden`. `node --check checkout/js/checkout.js` OK.
+
+### Migração de domínio da BRPix — 30/06/2026
+
+A BRPix descontinuou o domínio antigo `api.brpixsolutions.com` (caiu na noite de 29→30/06) e anunciou o
+novo domínio oficial **`brpixpayments.com.br`** ("as rotas permanecem as mesmas — somente o domínio mudou").
+Com o domínio antigo fora do ar, o checkout passou a **falhar ao gerar o PIX**: o front recebia
+`502 (Bad Gateway)` em `POST /api/checkout/criar-pix` — vindo da linha `res.status(502)...brpix_failed`
+em `api/checkout/criar-pix.js` quando a chamada à BRPix não retorna OK.
+
+**Onde o domínio é resolvido:** `lib/brpix.js` →
+`var BASE = process.env.BRPIX_BASE_URL || "https://brpixpayments.com.br";`. Em produção a env var
+`BRPIX_BASE_URL` **está setada no painel da Vercel e sobrescreve o fallback do código** — portanto o fix
+de produção é **atualizar a env var na Vercel + redeploy** (confirmado com o dono). A alteração no código
+e nos docs é por consistência (default correto para deploys/local sem a env var).
+
+Novo base URL escolhido (confirmado pelo dono): **`https://brpixpayments.com.br`** (domínio raiz, **sem** o
+subdomínio `api.` que o domínio antigo usava). O webhook (`/api/webhooks/brpix`) é a **nossa** URL
+(`cashnopixbr.site`) e **não mudou** — nada a alterar lá.
+
+Arquivos atualizados: `lib/brpix.js` (fallback), `.env.example`, `docs/checkout/referencias/api-pix/brpix-api.md`,
+e esta doc. `node --check lib/brpix.js` OK.
+
+**Ação manual pendente do dono (fora do repo):**
+1. Vercel → projeto → Settings → Environment Variables → `BRPIX_BASE_URL` = `https://brpixpayments.com.br` → Save.
+2. Redeploy (ou aguardar o deploy deste push, que também atualiza o default).
+3. Testar gerar PIX no checkout após o deploy.
 
 ### Pixels removidos (não usar mais)
 | Plataforma | ID antigo |
