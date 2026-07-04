@@ -653,3 +653,4 @@ sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópia
 | `7ba7bab` | Tracking: restringe `ic-checkout` ao produto front (acesso, back1, back2); remove das demais |
 | `50e6bfb` | Checkout: adiciona FAQ (Perguntas frequentes) só nas etapas front (acordeão `<details>`) |
 | `96d1411` | Fix(checkout): atualiza domínio da BRPix p/ `brpixpayments.com.br` (antigo caiu → 502 no PIX) |
+| `a9df3fe` | Tracking: instala script Live do cloaker (`live.js`) nas 8 páginas do funil |
