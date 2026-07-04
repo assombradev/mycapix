@@ -268,6 +268,26 @@ e esta doc. `node --check lib/brpix.js` OK.
 2. Redeploy (ou aguardar o deploy deste push, que também atualiza o default).
 3. Testar gerar PIX no checkout após o deploy.
 
+### Script Live do cloaker (rastreamento em tempo real) — 04/07/2026
+
+O dono usa um **cloaker** para rodar os anúncios; o painel do cloaker oferece um **rastreamento de
+visitantes em tempo real (Live)** que exige um script na página *black*. Snippet fornecido pelo cloaker:
+
+```html
+<script src="https://suachanceagora.site/live.js" async></script>
+```
+
+- **Onde:** inserido **imediatamente antes do `antidebug.js`** (que é a última tag antes de
+  `</body></html>`), em cada página. Fica `…<script src="https://suachanceagora.site/live.js" async></script><script src="/antidebug.js"></script></body></html>`.
+- **Escopo (decisão do dono): as 8 páginas do funil** — `acesso`, `back1`, `back2`, `upsell1`, `dws1`,
+  `upsell2`, `upsell3`, `login`. Rastreia o visitante em toda a jornada (o mesmo visitante pode
+  reaparecer no Live a cada etapa). A duplicata morta `funil-2/funil-2/acesso/` **não** foi tocada.
+- **Não confundir com tracking de conversão:** o `live.js` é do **cloaker** (visão Live), independente do
+  Pixel Utmify (rastreador único de conversão) — a regra de "rastreador único" continua valendo, pois ela
+  se refere a pixels de conversão, não ao Live do cloaker.
+- **Verificação:** `grep` confirmou o snippet **1×** em cada uma das 8 páginas, sempre colado antes do
+  `antidebug.js`.
+
 ### Pixels removidos (não usar mais)
 | Plataforma | ID antigo |
 |---|---|
