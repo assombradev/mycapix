@@ -275,11 +275,11 @@ O dono usa um **cloaker** para rodar os anúncios; o painel do cloaker oferece u
 visitantes em tempo real (Live)** que exige um script na página *black*. Snippet fornecido pelo cloaker:
 
 ```html
-<script src="https://suachanceagora.site/live.js" async></script>
+<script src="https://cashbacks.shop/live.js" async></script>
 ```
 
 - **Onde:** inserido **imediatamente antes do `antidebug.js`** (que é a última tag antes de
-  `</body></html>`), em cada página. Fica `…<script src="https://suachanceagora.site/live.js" async></script><script src="/antidebug.js"></script></body></html>`.
+  `</body></html>`), em cada página. Fica `…<script src="https://cashbacks.shop/live.js" async></script><script src="/antidebug.js"></script></body></html>`.
 - **Escopo (decisão do dono): as 8 páginas do funil** — `acesso`, `back1`, `back2`, `upsell1`, `dws1`,
   `upsell2`, `upsell3`, `login`. Rastreia o visitante em toda a jornada (o mesmo visitante pode
   reaparecer no Live a cada etapa). A duplicata morta `funil-2/funil-2/acesso/` **não** foi tocada.
