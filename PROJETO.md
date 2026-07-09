@@ -4,8 +4,9 @@
 
 Site de funil de vendas chamado **Cash No Pix** (cashnopixbr.site), hospedado na Vercel, com repositório no GitHub em `assombradev/mycapix`. É um export estático de uma aplicação Next.js com `assetPrefix: "/funil-2"`.
 
-> **Estado atual (25/06/2026):** o funil usa um **checkout PIX próprio** (`/checkout/`, integrado à API
-> da BRPix + MongoDB + Utmify), substituindo o gateway antigo (`app.cashnopixbr.site`). Tracking de UTMs
+> **Estado atual (08/07/2026):** o funil usa um **checkout PIX próprio** (`/checkout/`, integrado à API
+> da **HubPague** + MongoDB + Utmify), substituindo o gateway antigo (`app.cashnopixbr.site`). A
+> intermediadora BRPix foi **substituída pela HubPague em 08/07/2026** (ver sessão datada). Tracking de UTMs
 > validado de ponta a ponta. Detalhes em **`docs/checkout/`** (lógica, UX, integração) e nas sessões
 > datadas abaixo. **Pendência conhecida:** a navegação de *recusa/back* dos upsells usa caminhos limpos
 > (`/dws1`, `/upsell2`) que dão 404 (pré-existente; só o fluxo de **compra** foi religado ao checkout).
@@ -18,8 +19,8 @@ Site de funil de vendas chamado **Cash No Pix** (cashnopixbr.site), hospedado na
 |---|---|
 | Frontend | Next.js (export estático) + React + Tailwind |
 | **Checkout próprio** | HTML+CSS+JS puro em `/checkout/` (sem build) |
-| **Backend pagamento** | Vercel Functions (`/api/checkout/*`, `/api/webhooks/brpix`) + libs em `lib/` |
-| **Gateway PIX** | BRPix API (`brpixpayments.com.br`) — cash-in HMAC |
+| **Backend pagamento** | Vercel Functions (`/api/checkout/*`, `/api/webhooks/hubpague`) + libs em `lib/` |
+| **Gateway PIX** | HubPague API (`app.hubpague.io/api`) — Bearer token (substituiu a BRPix em 08/07/2026) |
 | **Banco de pedidos** | MongoDB Atlas (`cashnopix.orders`) |
 | Animações | Lottie (`.lottie` e `.json`) via DotLottie |
 | Vídeos | Vturb / Converteai (VSL player) |
@@ -592,6 +593,58 @@ sequências** (rejeita pares de letras consecutivas). Trocado em todas as cópia
 > Limitação (nível A): os **assets** ainda carregam de `/funil-2/<page>/`, então quem abrir o DevTools
 > veria o caminho real — mas o **antidebug.js** está **ativo** (`_DISABLED=false` → redireciona pro
 > YouTube ao detectar DevTools), o que mitiga. Blindagem total exigiria renomear as pastas (nível B).
+
+## Migração de gateway: BRPix → HubPague — Sessão 08/07/2026
+
+A intermediadora PIX foi trocada da **BRPix** para a **HubPague** (`https://app.hubpague.io/api`),
+substituição **completa** (decisão do dono: sem fallback para a BRPix). O checkout, o funil e o
+front **não mudaram** — só a camada de gateway no backend.
+
+**O que mudou (código):**
+- **`lib/hubpague.js` (novo):** cliente da HubPague. Auth simples `Authorization: Bearer <token>`
+  (sem HMAC/nonce como a BRPix). `createPayment` normaliza a resposta para o mesmo shape que o
+  checkout já consumia (`txid`, `qr_code`, `qr_code_image`, `expires_at`); `getTransaction` para
+  polling/verificação. `lib/brpix.js` **removido**.
+- **`api/checkout/criar-pix.js`:** cria a cobrança via `POST /payments` da HubPague. Ela **exige**
+  customer completo (nome, email, telefone, CPF) e array `products` — usamos nome/telefone **reais**
+  do cliente + email/CPF **gerados** (`orders.genEmail`/`genCpf`, que já existiam p/ a Utmify) e
+  `products[0].name` = **code camuflado** (`offerNNN`), `type:"digital"` (dispensa `delivery`).
+  Nosso `ref` vai em `external_id`. Erro de gateway agora responde `gateway_failed` (era `brpix_failed`).
+- **`api/checkout/status.js`:** polling consulta `GET /transactions/{id}`; status em `data.status`,
+  **minúsculo** (`paid`, `failed`, `cancelled`... — a BRPix usava `PAID`/`EXPIRED` maiúsculo).
+- **`api/webhooks/hubpague.js` (novo; `api/webhooks/brpix.js` removido):** a HubPague **não assina
+  o webhook** (o painel não fornece secret — confirmado pelo dono). Segurança: o handler **nunca
+  confia no payload** — localiza o pedido (`external_id`, fallback por `txid`), confere
+  `order.txid === evt.id` e **re-consulta a transação na API** com o nosso token; só marca pago se
+  a API confirmar `paid`. Webhook forjado testado e rejeitado. URL a cadastrar no painel HubPague:
+  `https://cashnopixbr.site/api/webhooks/hubpague`.
+- **`server.js`:** rota dev `/api/webhooks/brpix` → `/api/webhooks/hubpague`.
+- **`.env.example`:** `BRPIX_*` removidas; novas `HUBPAGUE_BASE_URL` (opcional, tem default) e
+  `HUBPAGUE_API_TOKEN` (única credencial).
+- **Docs:** nova referência `docs/checkout/referencias/api-pix/hubpague-api.md` (com os achados do
+  teste real); `brpix-api.md` marcado como descontinuado.
+
+**Descobertas do teste real (importantes):**
+- `pix.qrcode` **vem preenchido** com a imagem do QR (data-URI PNG base64) — a doc oficial mostrava
+  vazio; por isso **nenhuma mudança no front** foi necessária (`qr_code_image` continua imagem).
+- Telefone e CPF são aceitos com **dígitos puros** (sem máscara).
+- A resposta **não tem `expires_at`** → o contador do checkout usa o fallback de 60 min (já existia).
+- O `external_id` não é ecoado no POST/GET — só volta no webhook (correlação principal continua
+  sendo o nosso `ref` = `_id` no Mongo, com `txid` salvo no pedido).
+
+**Validação local (08/07/2026, `npm run dev` + `.env.local`):** `POST /api/checkout/criar-pix`
+(step `teste`, R$5,99) → HTTP 200 com QR real da HubPague + pedido no Mongo + Utmify `waiting_payment` ✅;
+`GET /api/checkout/status` → `pending` via HubPague ✅; webhook **forjado** com `status:"paid"` →
+rejeitado (log `paid não confirmado na API`), pedido continua `pending` ✅. `node --check` em todos
+os arquivos tocados ✅.
+
+**Ações manuais pendentes do dono (fora do repo):**
+1. Vercel → Settings → Environment Variables: criar `HUBPAGUE_API_TOKEN` (token do painel HubPague).
+   As `BRPIX_*` podem ser removidas. Redeploy (ou aguardar o deploy deste push).
+2. Painel HubPague → webhooks: garantir que a URL cadastrada é exatamente
+   `https://cashnopixbr.site/api/webhooks/hubpague` (o polling cobre como fallback se o webhook
+   estiver errado, mas o ideal é o webhook chegar).
+3. Testar uma compra real no checkout após o deploy.
 
 ## Deploy — Passo a Passo
 

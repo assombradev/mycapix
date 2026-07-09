@@ -1,4 +1,7 @@
-# BRPix — API PIX (referência)
+# BRPix — API PIX (referência) — ❌ DESCONTINUADA em 08/07/2026
+
+> ⚠️ **Gateway substituído pela HubPague** (ver `hubpague-api.md`). `lib/brpix.js` e
+> `api/webhooks/brpix.js` foram removidos do repo. Este arquivo fica só como histórico.
 
 > Documentação fornecida pela BRPix (holding brpix; intermediadora **somente API**, sem checkout).
 > Salvo em 2026-06-24. Para o checkout usamos principalmente **Cash-In** (receber pagamento).

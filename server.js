@@ -24,7 +24,7 @@ const PORT = 3000;
 const API_ROUTES = {
   '/api/checkout/criar-pix': './api/checkout/criar-pix.js',
   '/api/checkout/status': './api/checkout/status.js',
-  '/api/webhooks/brpix': './api/webhooks/brpix.js'
+  '/api/webhooks/hubpague': './api/webhooks/hubpague.js'
 };
 function shimRes(res) {
   if (!res.status) res.status = function (c) { res.statusCode = c; return res; };

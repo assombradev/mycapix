@@ -1,10 +1,10 @@
 "use strict";
 /* POST /api/checkout/criar-pix
    body: { step, tier?, customer:{name,phone,pixKey}, utms:{...} }
-   -> cria cobrança BRPix + salva pedido (Mongo) + Utmify(waiting_payment) -> { ref, txid, qr_code, qr_code_image, expires_at } */
+   -> cria cobrança HubPague + salva pedido (Mongo) + Utmify(waiting_payment) -> { ref, txid, qr_code, qr_code_image, expires_at } */
 
 var prices = require("../../lib/prices");
-var brpix = require("../../lib/brpix");
+var hubpague = require("../../lib/hubpague");
 var utmify = require("../../lib/utmify");
 var orders = require("../../lib/orders");
 var mongo = require("../../lib/mongo");
@@ -38,16 +38,17 @@ module.exports = async function (req, res) {
     var email = orders.genEmail(ref);
     var utms = orders.pickUtms(body.utms);
 
-    // 1) Cria a cobrança na BRPix (resposta normalizada no lib).
-    //    description = code camuflado (offerNNN), não o nome real.
-    var charge = await brpix.createCashIn({
+    // 1) Cria a cobrança na HubPague (resposta normalizada no lib).
+    //    Produto vai com o code camuflado (offerNNN), não o nome real.
+    //    Cliente: nome/telefone reais + email/CPF gerados (a HubPague os exige).
+    var charge = await hubpague.createPayment({
       amount: cfg.amount,
-      description: cfg.code,
-      external_reference: ref,
-      expires_in: "3600"
+      code: cfg.code,
+      external_id: ref,
+      customer: { name: customer.name, email: email, phone: customer.phone, document: cpf }
     });
     if (!charge.ok || (!charge.qr_code && !charge.qr_code_image)) {
-      res.status(502).json({ error: "brpix_failed", detail: charge.error });
+      res.status(502).json({ error: "gateway_failed", detail: charge.error });
       return;
     }
     var txid = charge.txid;

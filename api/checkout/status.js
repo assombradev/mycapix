@@ -1,9 +1,9 @@
 "use strict";
 /* GET /api/checkout/status?ref=<externalReference>
-   Retorna o status do pedido. Como fallback (caso o webhook atrase), consulta a BRPix
+   Retorna o status do pedido. Como fallback (caso o webhook atrase), consulta a HubPague
    e, se já estiver pago, marca pago + dispara Utmify(paid) de forma idempotente. */
 
-var brpix = require("../../lib/brpix");
+var hubpague = require("../../lib/hubpague");
 var mongo = require("../../lib/mongo");
 var markPaid = require("../../lib/markPaid");
 
@@ -19,12 +19,12 @@ module.exports = async function (req, res) {
     if (!order) { res.status(404).json({ error: "not_found" }); return; }
 
     if (order.status === "pending" && order.txid) {
-      // fallback: confirma direto na BRPix
+      // fallback: confirma direto na HubPague (status minúsculo: pending/paid/failed/...)
       try {
-        var charge = await brpix.getCharge(order.txid);
-        var st = charge.data && (charge.data.status || (charge.data.data && charge.data.data.status));
-        if (st === "PAID") { await markPaid(ref, "polling"); order.status = "paid"; }
-        else if (st === "EXPIRED" || st === "CANCELLED") { await col.updateOne({ _id: ref }, { $set: { status: "expired" } }); order.status = "expired"; }
+        var charge = await hubpague.getTransaction(order.txid);
+        var st = charge.txStatus;
+        if (st === "paid") { await markPaid(ref, "polling"); order.status = "paid"; }
+        else if (st === "failed" || st === "cancelled") { await col.updateOne({ _id: ref }, { $set: { status: "expired" } }); order.status = "expired"; }
       } catch (e) { /* ignora erro de polling; devolve o status atual */ }
     }
 
