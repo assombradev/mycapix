@@ -60,7 +60,8 @@ fica em `data.status`, **minúsculo**: `processing | pending | paid | failed | r
 
 ## Webhook (atualização de status)
 
-- URL cadastrada **no painel** da HubPague: `https://cashnopixbr.site/api/webhooks/hubpague`.
+- URL cadastrada **no painel** da HubPague: `https://cashnopixbrasil.site/api/webhooks/hubpague`
+  (domínio atualizado em 08/07/2026; o antigo era `cashnopixbr.site`).
 - POST JSON com `notification_type: "transaction"`, `id`, `external_id`, `status`, customer etc.
 - ⚠️ **SEM assinatura/secret** (o painel não fornece). Por isso o handler
   (`api/webhooks/hubpague.js`) **nunca confia no payload**: localiza o pedido

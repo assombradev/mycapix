@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Site de funil de vendas chamado **Cash No Pix** (cashnopixbr.site), hospedado na Vercel, com repositório no GitHub em `assombradev/mycapix`. É um export estático de uma aplicação Next.js com `assetPrefix: "/funil-2"`.
+Site de funil de vendas chamado **Cash No Pix** (cashnopixbrasil.site; antigo cashnopixbr.site até 08/07/2026), hospedado na Vercel, com repositório no GitHub em `assombradev/mycapix`. É um export estático de uma aplicação Next.js com `assetPrefix: "/funil-2"`.
 
 > **Estado atual (08/07/2026):** o funil usa um **checkout PIX próprio** (`/checkout/`, integrado à API
 > da **HubPague** + MongoDB + Utmify), substituindo o gateway antigo (`app.cashnopixbr.site`). A
@@ -28,7 +28,7 @@ Site de funil de vendas chamado **Cash No Pix** (cashnopixbr.site), hospedado na
 | Servidor local | Node.js (server.js) — serve estáticos + roda as Functions em dev |
 | Hospedagem | Vercel (static site + Functions, framework = Other) |
 | Repositório | https://github.com/assombradev/mycapix |
-| Domínio | https://cashnopixbr.site |
+| Domínio | https://cashnopixbrasil.site (desde 08/07/2026; antigo: cashnopixbr.site) |
 
 ---
 
@@ -70,7 +70,7 @@ ofertacashnopix/
 ## Fluxo do Funil
 
 ```
-cashnopixbr.site/   →   acesso  (front — oferta principal R$37)
+cashnopixbrasil.site/   →   acesso  (front — oferta principal R$37)
                               ↕ back redirect
                            back1
                               ↕ back redirect
@@ -617,7 +617,7 @@ front **não mudaram** — só a camada de gateway no backend.
   confia no payload** — localiza o pedido (`external_id`, fallback por `txid`), confere
   `order.txid === evt.id` e **re-consulta a transação na API** com o nosso token; só marca pago se
   a API confirmar `paid`. Webhook forjado testado e rejeitado. URL a cadastrar no painel HubPague:
-  `https://cashnopixbr.site/api/webhooks/hubpague`.
+  `https://cashnopixbrasil.site/api/webhooks/hubpague` (domínio novo).
 - **`server.js`:** rota dev `/api/webhooks/brpix` → `/api/webhooks/hubpague`.
 - **`.env.example`:** `BRPIX_*` removidas; novas `HUBPAGUE_BASE_URL` (opcional, tem default) e
   `HUBPAGUE_API_TOKEN` (única credencial).
@@ -642,9 +642,38 @@ os arquivos tocados ✅.
 1. Vercel → Settings → Environment Variables: criar `HUBPAGUE_API_TOKEN` (token do painel HubPague).
    As `BRPIX_*` podem ser removidas. Redeploy (ou aguardar o deploy deste push).
 2. Painel HubPague → webhooks: garantir que a URL cadastrada é exatamente
-   `https://cashnopixbr.site/api/webhooks/hubpague` (o polling cobre como fallback se o webhook
+   `https://cashnopixbrasil.site/api/webhooks/hubpague` (o polling cobre como fallback se o webhook
    estiver errado, mas o ideal é o webhook chegar).
 3. Testar uma compra real no checkout após o deploy.
+
+## Troca de domínio: cashnopixbr.site → cashnopixbrasil.site — Sessão 08/07/2026
+
+O dono trocou o domínio do site para **`https://cashnopixbrasil.site`**. Sintoma: **checkout
+inacessível** a partir das páginas do funil — os botões de compra usavam **URLs absolutas** com o
+domínio antigo (`https://cashnopixbr.site/checkout/#step=...`), então o clique saía do site novo
+para o domínio morto.
+
+**Correção (à prova de futuras trocas de domínio):**
+1. **Links do checkout viraram RELATIVOS** (`/checkout/#step=...`) em todos os lugares: chunks
+   `page-<hash>.js` (nas duas cópias) e `<a href>` estáticos nos `index.html` — 8 páginas.
+2. **Patch no componente `V1`** (chunks `327`, `524` e chunk do back1): o clique fazia
+   `new URL(n)` **sem base**, que lança exceção com URL relativa (o botão morreria). Trocado por
+   `new URL(n, window.location.origin)` em **todas as cópias** (6× do `327`, incluindo os órfãos,
+   `524` e o page chunk do back1 nas 2 cópias). Comportamento idêntico para URLs absolutas;
+   habilita as relativas. `node --check` OK em todos.
+3. **`lib/orders.js`:** email sintético dos pedidos agora `@cashnopixbrasil.site` (cosmético).
+4. Docs/PROJETO atualizados. As divergências pré-existentes entre cópias gêmeas de
+   acesso/upsell1/upsell3 (links órfãos históricos no lado `_next`) **continuam como estavam** —
+   o patch alterou as duas cópias de cada par por igual.
+
+> 📌 **Regra nova:** links internos (checkout, próximas etapas) devem ser **sempre relativos** —
+> nunca hardcodar o domínio. O `V1` agora suporta isso nativamente.
+
+**Ações manuais pendentes do dono (fora do repo):**
+1. **Painel HubPague** → atualizar a URL do webhook para
+   `https://cashnopixbrasil.site/api/webhooks/hubpague` (a cadastrada aponta para o domínio antigo;
+   enquanto isso o polling confirma os pagamentos).
+2. Conferir na Vercel se o domínio novo está atribuído ao projeto (aparentemente já feito).
 
 ## Deploy — Passo a Passo
 
