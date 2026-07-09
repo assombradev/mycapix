@@ -737,3 +737,4 @@ para o domínio morto.
 | `96d1411` | Fix(checkout): atualiza domínio da BRPix p/ `brpixpayments.com.br` (antigo caiu → 502 no PIX) |
 | `a9df3fe` | Tracking: instala script Live do cloaker (`live.js`) nas 8 páginas do funil |
 | `5e5c503` | Gateway: migra API PIX da BRPix para a HubPague (Bearer token, webhook verificado server-side) |
+| `7ea6c4f` | Fix(domínio): links do checkout relativos + `V1` aceita URL relativa (novo domínio cashnopixbrasil.site) |
