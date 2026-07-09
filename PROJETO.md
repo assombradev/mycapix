@@ -707,3 +707,4 @@ os arquivos tocados ✅.
 | `50e6bfb` | Checkout: adiciona FAQ (Perguntas frequentes) só nas etapas front (acordeão `<details>`) |
 | `96d1411` | Fix(checkout): atualiza domínio da BRPix p/ `brpixpayments.com.br` (antigo caiu → 502 no PIX) |
 | `a9df3fe` | Tracking: instala script Live do cloaker (`live.js`) nas 8 páginas do funil |
+| `5e5c503` | Gateway: migra API PIX da BRPix para a HubPague (Bearer token, webhook verificado server-side) |
