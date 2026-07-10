@@ -303,16 +303,25 @@ visitantes em tempo real (Live)** que exige um script na página *black*. Snippe
 
 ## Vídeos VSL (Vturb / Converteai)
 
-Conta Converteai/VTurb: `c5c5520a-6468-49b6-8fcd-2fdef181a90b` (migrada em **26/06/2026** — o plano da
-conta anterior `78d130da-…` expirou). São 4 VSLs no funil, mapeadas por página (o player é renderizado
-pelo chunk React de cada página):
+Conta Converteai/VTurb: `40530009-2f01-49fb-a6b7-ef23c531d31d` (trocada em **10/07/2026**; antes
+`c5c5520a-…` de 26/06/2026, e antes dela `78d130da-…`, expirada). São 4 VSLs no funil, mapeadas por
+página (o player é renderizado pelo chunk React de cada página):
 
 | VSL | ID do Player | m3u8 | Página | Obs |
 |---|---|---|---|---|
-| VSL 1 | `6a3f362908d228be16161a19` | `6a3f36198db7a18863912ba6` | acesso | botão 769s (~12min) |
-| VSL 2 | `6a3f365b2f7698b129fde737` | `6a3f3657d846aeb492a19e18` | acesso | botão 355s (~6min) |
-| VSL 3 | `6a3f366a2f7698b129fde749` | `6a3f365cd7338761a2d0d071` | upsell1 | |
-| VSL 4 | `6a3f3692db7d7e5918de1534` | `6a3f366c25039ab6bccbcc11` | upsell2 | |
+| VSL 1 | `6a51370f638819e718543104` | `6a5137063d8ea0afcdc5fa72` | acesso | botão 769s (~12min) |
+| VSL 2 | `6a5136f2638819e718543004` | `6a5136e941eb329d8a3c2d64` | acesso | botão 355s (~6min) |
+| VSL 3 | `6a51371d5a512c0545f005d5` | `6a5137119d99577b214e503b` | upsell1 | |
+| VSL 4 | `6a5137055a512c0545f00521` | `6a5136f55a512c0545f004c5` | upsell2 | |
+
+> **Troca de 10/07/2026 (conta `c5c5520a-…` → `40530009-…`):** mesmos 3 lugares por VSL (preloads do
+> head + embed nas duas cópias do chunk). Novidade: os embeds novos trazem o
+> `<div class="vturb-player-placeholder">` (reserva o espaço do vídeo com fundo preto enquanto o player
+> carrega — padding 56.25% nas VSLs do acesso, 164.46% no upsell1, 175.46% no upsell2), inserido também
+> dentro das strings de embed dos chunks. IDs anteriores (conta `c5c5520a-…`): VSL1
+> `6a3f3629…`/`6a3f3619…`, VSL2 `6a3f365b…`/`6a3f3657…`, VSL3 `6a3f366a…`/`6a3f365c…`, VSL4
+> `6a3f3692…`/`6a3f366c…`. O chunk órfão `upsell2/js/page-7e1442…` (não carregado pelo index) também foi
+> atualizado por consistência.
 
 > **IDs antigos (conta `78d130da-…`, expirada):** VSL1 `6a2c7a3c…`/`6a2c7a28…`, VSL2 `6a2c7906…`/`6a2c78fe…`,
 > VSL3 `6a2edaff…`/`6a2edae2…`, VSL4 `6a2eef74…`/`6a2eef5d…`. Trocados em **3 lugares** por VSL: head do
@@ -675,6 +684,36 @@ para o domínio morto.
    enquanto isso o polling confirma os pagamentos).
 2. Conferir na Vercel se o domínio novo está atribuído ao projeto (aparentemente já feito).
 
+## Latência do PIX (HubPague ~16s) + UX do checkout — Sessão 10/07/2026
+
+O dono notou demora para o QR/copia-e-cola aparecerem. Medição real (4 chamadas): o
+**`POST /payments` da HubPague leva ~16s** consistentemente (18,4s / 16,0s / 15,9s / 16,0s), enquanto
+o `GET /transactions` responde em ~0,25s — ou seja, a demora é da emissão do PIX no lado deles (a
+BRPix era assíncrona e respondia na hora). O resto do nosso fluxo (Mongo + Utmify awaited + cold
+start) soma ~1–3s. **Pendência do dono:** cobrar o suporte da HubPague (16s está muito acima do
+mercado, 1–3s).
+
+**Mitigação de UX (só front do checkout, zero backend):** a tela "gerando" ganhou **barra de
+progresso** (assintótica, calibrada para ~16s) + **mensagens rotativas** ("Conectando com a
+instituição de pagamento…", "Gerando seu código PIX seguro…", "Registrando a cobrança…", "Quase
+pronto! Finalizando…") + aviso "Não feche esta página". Arquivos: `checkout/index.html` (bloco
+`generating`), `checkout/css/checkout.css` (`.genprog/.genmsg/.genhint`), `checkout/js/checkout.js`
+(`GEN_STAGES`, `startGeneratingUi/stopGeneratingUi` no `goPay`). Para preview sem cobrança real:
+`/checkout/#step=teste&mock=1&mockdelay=16000` (o `mockdelay` foi adicionado ao modo mock).
+Validado visualmente no navegador com o dev server local.
+
+Aproveitado na sessão: `server.js` dev agora aceita `PORT` via env (`PORT=3210 node server.js`) —
+a porta 3000 estava ocupada por outro projeto; a Vercel não usa esse server.
+
+## Troca das VSLs para a conta VTurb nova (`40530009-…`) — Sessão 10/07/2026
+
+O dono enviou embeds novos das 4 VSLs (conta Converteai `40530009-2f01-49fb-a6b7-ef23c531d31d`) com
+os speed codes correspondentes. Troca aplicada conforme a seção **"Vídeos VSL"** (tabela nova + nota
+de 10/07/2026): IDs de player/m3u8/conta substituídos nos preloads dos `index.html` e nos embeds dos
+chunks (duas cópias cada), com o **placeholder novo** (`vturb-player-placeholder`) inserido nos
+embeds. `node --check` OK em todos os chunks; nenhum ID antigo restante; divergências pré-existentes
+dos gêmeos preservadas (mudanças idênticas nos dois lados).
+
 ## Deploy — Passo a Passo
 
 1. Faça as alterações locais
@@ -738,3 +777,5 @@ para o domínio morto.
 | `a9df3fe` | Tracking: instala script Live do cloaker (`live.js`) nas 8 páginas do funil |
 | `5e5c503` | Gateway: migra API PIX da BRPix para a HubPague (Bearer token, webhook verificado server-side) |
 | `7ea6c4f` | Fix(domínio): links do checkout relativos + `V1` aceita URL relativa (novo domínio cashnopixbrasil.site) |
+| `e325886` | Checkout: barra de progresso + mensagens na espera do PIX (HubPague demora ~16s no POST /payments) |
+| `c01ce4a` | VSL: migra players VTurb para a conta nova (`40530009`) + `vturb-player-placeholder` nos embeds |
