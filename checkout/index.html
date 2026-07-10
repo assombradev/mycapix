@@ -91,12 +91,12 @@
       <!-- CTA (input) -->
       <button type="button" class="cta" id="cta" data-when="input">GERAR PIX</button>
 
-      <!-- generating: skeleton -->
+      <!-- generating: skeleton + progresso (o gateway leva ~15-20s p/ emitir o PIX) -->
       <div class="generating" data-when="generating" hidden>
         <div class="sk sk--qr"></div>
-        <div class="sk sk--line"></div>
-        <div class="sk sk--line sk--short"></div>
-        <p class="muted center">Gerando seu PIX…</p>
+        <div class="genprog"><div class="genprog__bar" id="genBar"></div></div>
+        <p class="genmsg" id="genMsg">Iniciando a geração do seu PIX…</p>
+        <p class="muted center genhint">Isso leva alguns segundos. Não feche esta página.</p>
       </div>
 
       <!-- awaiting: QR + copia-e-cola + contador + status -->

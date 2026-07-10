@@ -50,7 +50,8 @@
     form:$("#form"), cta:$("#cta"),
     vName:$("#vName"), vPhone:$("#vPhone"), vPix:$("#vPix"), editInfo:$("#editInfo"),
     qrImg:$("#qrImg"), copyBtn:$("#copyBtn"), pixCode:$("#pixCode"),
-    countdown:$("#countdown"), devPay:$("#devPay"), regen:$("#regen")
+    countdown:$("#countdown"), devPay:$("#devPay"), regen:$("#regen"),
+    genBar:$("#genBar"), genMsg:$("#genMsg")
   };
 
   /* ---------- Render do resumo ---------- */
@@ -144,11 +145,47 @@
   }
   function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
 
+  /* ---------- UI de "gerando" (o gateway leva ~15-20s p/ emitir o PIX) ----------
+     Barra de progresso assintótica + mensagens rotativas para segurar o usuário. */
+  var GEN_STAGES = [
+    { t:0,     pct:15, msg:"Iniciando a geração do seu PIX…" },
+    { t:2500,  pct:35, msg:"Conectando com a instituição de pagamento…" },
+    { t:7000,  pct:55, msg:"Gerando seu código PIX seguro…" },
+    { t:12000, pct:72, msg:"Registrando a cobrança…" },
+    { t:17000, pct:86, msg:"Quase pronto! Finalizando…" },
+    { t:24000, pct:94, msg:"Só mais um instante…" }
+  ];
+  var genTimers = [];
+  function startGeneratingUi(){
+    if (!els.genBar || !els.genMsg) return;
+    stopGeneratingUi();
+    els.genBar.style.transition = "none";
+    els.genBar.style.width = "0%";
+    void els.genBar.offsetWidth; // reflow: garante que o reset aplica antes de reanimar
+    els.genBar.style.transition = "";
+    GEN_STAGES.forEach(function(stg){
+      genTimers.push(setTimeout(function(){
+        els.genBar.style.width = stg.pct + "%";
+        els.genMsg.style.opacity = "0";
+        genTimers.push(setTimeout(function(){
+          els.genMsg.textContent = stg.msg;
+          els.genMsg.style.opacity = "1";
+        }, 250));
+      }, stg.t));
+    });
+  }
+  function stopGeneratingUi(){
+    genTimers.forEach(clearTimeout);
+    genTimers = [];
+  }
+
   /* ---------- Backend ---------- */
   function createPix(payload){
     if(MOCK){
       var code = "00020126_MOCK_"+stepKey+"_"+Date.now()+"5204000053039865802BR6009SAO PAULO62070503***6304ABCD";
-      return Promise.resolve({ ref:"mock-"+Date.now(), txid:"mock", qr_code:code, qr_code_image:makeFakeQr(code), expires_at:null });
+      var res = { ref:"mock-"+Date.now(), txid:"mock", qr_code:code, qr_code_image:makeFakeQr(code), expires_at:null };
+      var delay = parseInt(pget("mockdelay"), 10) || 0; // simula a demora do gateway (#mock=1&mockdelay=16000)
+      return new Promise(function(resolve){ setTimeout(function(){ resolve(res); }, delay); });
     }
     return fetch("/api/checkout/criar-pix",{
       method:"POST", headers:{"Content-Type":"application/json"},
@@ -161,8 +198,10 @@
 
   function goPay(payload){
     setState("generating");
+    startGeneratingUi();
     if(payload) try{ localStorage.setItem("cnp_customer", JSON.stringify(payload)); savedCustomer=payload; }catch(e){}
     createPix(payload).then(function(res){
+      stopGeneratingUi();
       currentRef = res.ref;
       els.qrImg.src = res.qr_code_image;
       els.pixCode.value = res.qr_code;
@@ -171,6 +210,7 @@
       startCountdown(expMs && !isNaN(expMs) ? expMs : 0);
       if(MOCK) els.devPay.hidden=false; else startPolling(currentRef);
     }).catch(function(){
+      stopGeneratingUi();
       setState("input");
       alert("Não foi possível gerar o PIX. Tente de novo.");
     });

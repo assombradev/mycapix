@@ -148,6 +148,14 @@ body{
 .sk--line{width:100%;height:14px}
 .sk--short{width:60%}
 
+/* barra de progresso + mensagens rotativas durante a emissão do PIX */
+.genprog{width:100%;max-width:260px;height:8px;background:#e8e8e8;border-radius:999px;overflow:hidden}
+.genprog__bar{height:100%;width:0;background:var(--primary);border-radius:999px;
+  transition:width 3.2s cubic-bezier(.25,.6,.35,1)}
+.genmsg{margin:0;font-size:14px;font-weight:600;color:var(--gray1);text-align:center;
+  min-height:1.5em;transition:opacity .25s ease}
+.genhint{margin:0;font-size:12px}
+
 /* ---------------- Awaiting ---------------- */
 .awaiting{display:flex;flex-direction:column;align-items:center}
 .qr{padding:10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);

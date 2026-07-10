@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000; // dev-only (a Vercel não usa este server)
 
 // --- Dev: carrega .env.local em process.env (para as Functions locais) ---
 (function loadEnv() {
