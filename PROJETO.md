@@ -742,6 +742,33 @@ sessão — `acesso/js/` tem o pixel Meta `3959699630937334`; `_next/.../app/ace
 antigos (`1290964956011120`, `1904673840487868`). Isso contraria a regra "Utmify como rastreador
 único". A edição desta sessão foi idêntica nos dois lados; a divergência de pixels ficou como estava.
 
+## Fix dos upsells: fluxo `_sr` com config vazia — Sessão 12/07/2026
+
+**Sintoma (teste do dono):** no funil completo, o botão do upsell1 mandava "para outro lugar" em vez
+do checkout interno.
+
+**Causa:** o funil grava um `flow` no localStorage — o acesso grava `_p` (presell), mas os botões do
+**back1/back2 gravam `_sr`** (o `onClick` do `V1` grava antes de redirecionar, inclusive indo para a
+AmploPay). Com `flow=_sr`, os upsells selecionam as variantes `up1Sr`/`up2Sr`/`up3Sr` da config — que
+estavam **todas vazias** (`pay:""`, `disru:""`). O `V1` então fazia `new URL("", origin)` e navegava
+para a raiz do site (a página do front). Bug pré-existente: já afetava compradores vindos do
+back1/back2 antes mesmo do teste com checkout externo.
+
+**Correção:** como a página de obrigado da AmploPay agora aponta para o upsell1 (pós-venda inteiro no
+checkout interno), as variantes `Sr` foram preenchidas com os **mesmos links internos** das variantes
+`P`, cada chunk com a sua própria chave (duas cópias cada, `node --check` OK):
+
+| Chunk | Chave preenchida | Valor |
+|---|---|---|
+| upsell1 `page-7e1442d84f3b6bce.js` | `up1Sr.pay` | `/checkout/#step=upsell1&next=/o/eaetc63e` |
+| upsell2 `page-95048fca631c14c5.js` | `up2Sr.pay` | `/checkout/#step=upsell2&next=/o/xi92jg6y` |
+| upsell3 `page-530ff2084a91d52c.js` | `up3Sr.pay` (3 tiers) | `/checkout/#step=upsell3&tier=<tier>&next=/o/x3eyn6it` |
+
+Verificado na mesma sessão: as chaves `P` dos 3 upsells já estavam corretas (checkout interno,
+`disru` vazio). Achados menores não tratados: `upsell2/js/page-7e1442d84f3b6bce.js` é chunk órfão
+(o index carrega o `95048f...`); gêmeos do upsell1/upsell3 têm divergências pré-existentes em
+trechos não usados pela página (chave `up2P` no chunk do upsell1; URL da disrupt quebrada no upsell3).
+
 ## Deploy — Passo a Passo
 
 1. Faça as alterações locais
@@ -808,3 +835,4 @@ antigos (`1290964956011120`, `1904673840487868`). Isso contraria a regra "Utmify
 | `e325886` | Checkout: barra de progresso + mensagens na espera do PIX (HubPague demora ~16s no POST /payments) |
 | `c01ce4a` | VSL: migra players VTurb para a conta nova (`40530009`) + `vturb-player-placeholder` nos embeds |
 | `fe95dd0` | Checkout: teste A/B — front/back1/back2 apontam p/ checkout externo AmploPay (offer via `extraParams`) |
+| `95b87f8` | Fix(upsells): fluxo `_sr` caía em config vazia e botão voltava p/ raiz (preenche `up1Sr/up2Sr/up3Sr`) |
