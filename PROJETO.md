@@ -714,6 +714,34 @@ chunks (duas cópias cada), com o **placeholder novo** (`vturb-player-placeholde
 embeds. `node --check` OK em todos os chunks; nenhum ID antigo restante; divergências pré-existentes
 dos gêmeos preservadas (mudanças idênticas nos dois lados).
 
+## Teste: checkout externo AmploPay no front/back1/back2 — Sessão 12/07/2026
+
+**Por quê:** muitos relatos de compradores travando no checkout interno ("QR code não lê"). Decisão do
+dono: testar o funil principal com um **checkout externo (AmploPay)** para comparar conversão.
+
+**O que mudou:** os botões `V1` das 3 páginas do fluxo principal deixaram de apontar para
+`/checkout/#step=...` e passaram a ir para `https://seguroamplopay.com/checkout/cmrhwdhzn0rxt01okzua5m3ye`,
+cada página com sua oferta:
+
+| Página | Chunk (2 cópias cada) | Oferta AmploPay | Valor |
+|---|---|---|---|
+| acesso (front) | `page-fa41e9f0a4a1bb1e.js` | `KDZV6C0` | R$ 37 |
+| back1 | `page-3c05b66a160bb536.js` | `2Z8OXDC` | R$ 27 |
+| back2 (2 botões) | `page-777de0f50b27677d.js` | `862NFMU` | R$ 19 |
+
+**Detalhe crítico:** o componente `V1` reconstrói a URL substituindo a query string pela query da
+página atual (UTMs) + `extraParams` — um `?offer=` colocado só no `href` seria **apagado** no clique.
+Por isso o `offer` foi para o `extraParams` (no lugar do antigo `hidecard:1`, que só servia ao checkout
+interno). Efeito colateral positivo: as UTMs continuam sendo repassadas à AmploPay.
+
+**Reversão:** o checkout interno (`/checkout/`), upsells e dws1 não foram tocados. Para voltar, basta
+restaurar `href:"/checkout/#step=<etapa>&next=/o/pb622z43",extraParams:{hidecard:1}` nos 6 arquivos.
+
+**Achado pré-existente (não tratado):** as duas cópias do chunk do acesso divergiam **antes** desta
+sessão — `acesso/js/` tem o pixel Meta `3959699630937334`; `_next/.../app/acesso/` tem dois IDs
+antigos (`1290964956011120`, `1904673840487868`). Isso contraria a regra "Utmify como rastreador
+único". A edição desta sessão foi idêntica nos dois lados; a divergência de pixels ficou como estava.
+
 ## Deploy — Passo a Passo
 
 1. Faça as alterações locais
@@ -779,3 +807,4 @@ dos gêmeos preservadas (mudanças idênticas nos dois lados).
 | `7ea6c4f` | Fix(domínio): links do checkout relativos + `V1` aceita URL relativa (novo domínio cashnopixbrasil.site) |
 | `e325886` | Checkout: barra de progresso + mensagens na espera do PIX (HubPague demora ~16s no POST /payments) |
 | `c01ce4a` | VSL: migra players VTurb para a conta nova (`40530009`) + `vturb-player-placeholder` nos embeds |
+| `fe95dd0` | Checkout: teste A/B — front/back1/back2 apontam p/ checkout externo AmploPay (offer via `extraParams`) |
